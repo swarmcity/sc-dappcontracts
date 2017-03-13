@@ -35,7 +35,7 @@ contract Parameters is Ownable {
 		parameters[_name] = _value;
 	}
 
-  function getParameter(string _name) returns(string){
+  function getParameter(string _name) constant returns (string){
     return parameters[_name];
   }
 
