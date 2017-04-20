@@ -1,17 +1,14 @@
 var MiniMeTokenFactory = artifacts.require("./MiniMeToken.sol");
 var MiniMeToken = artifacts.require("./MiniMeToken.sol");
-var HashtagController = artifacts.require("./MiniMeToken.sol");
+var Hashtag = artifacts.require("./Hashtag.sol");
+var SimpleDeal = artifacts.require("./SimpleDeal.sol");
 
-contract('HashtagController', function(accounts) {
+contract('Hashtag', function(accounts) {
 
-  var deposit_address = accounts[1];
-
-  //var hashtagToken; // this is the MiniMeToken version
+  var swtToken; // this is the MiniMeToken version
   var miniMeTokenFactory;
-  var arcToken; // this is the old ARC token contract
-  var swtConverter; // this is the controller that converts ARC->SWT
-  var clone0; // a clone token
-  var clone1; // a clone token
+  var hashtagContract;
+
   var self = this;
 
   describe('Deploy MiniMeToken TokenFactory', function() {
@@ -25,40 +22,56 @@ contract('HashtagController', function(accounts) {
     });
   });
 
-  describe('Deploy MiniMeToken Token & HashtagController', function() {
+  describe('Deploy SWT (test) Token', function() {
 
-    var hashtagToken;
-
-    it("should deploy MiniMeToken contract", function(done) {
+    it("should deploy a MiniMeToken contract", function(done) {
       MiniMeToken.new(
         miniMeTokenFactory.address,
         0,
         0,
-        "NeedaRideANT",
+        "Swarm City Token",
         18,
-        "SWTREP",
+        "SWT",
         true
       ).then(function(_miniMeToken) {
         assert.ok(_miniMeToken.address);
         console.log('Hashtag token created at address', _miniMeToken.address);
-        hashtagToken = _miniMeToken;
+        swtToken = _miniMeToken;
         done();
       });
     });
 
-    it("should deploy Controller", function(done) {
-      HashtagController.new(deposit_address, hashtagToken.address, arcToken.address).then(function(instance) {
-        swtConverter = instance;
-        assert.isNotNull(swtConverter);
+    it("should mint tokens for accounts[1] ( owner ) ", function(done) {
+      swtToken.generateTokens(accounts[1], 100).then(function() {
         done();
       });
     });
 
-    it("should set token's controller to HashtagController", function(done) {
-      hashtagToken.changeController(swtConverter.address).then(function() {
+    it("should mint tokens for accounts[2] ( counterparty ) ", function(done) {
+      swtToken.generateTokens(accounts[2], 200).then(function() {
         done();
-      }).catch(function(e) {
-        assert.fail(null, null, 'this function should not throw', e);
+      });
+    });
+
+    it("should deploy Hashtag", function(done) {
+      Hashtag.new(swtToken.address, "pioneer", 10, {
+        gas: 4700000
+      }).then(function(instance) {
+        hashtagContract = instance;
+        assert.isNotNull(hashtagContract);
+        done();
+      });
+    });
+
+  });
+
+  describe('Deal happy flow', function() {
+    it("should create new SimpleDeal", function(done) {
+      SimpleDeal.new(hashtagContract.address, accounts[2], 10, 0x123, {
+        from: accounts[1]
+      }).then(function(instance) {
+        dealContract = instance;
+        assert.isNotNull(dealContract);
         done();
       });
     });
@@ -67,7 +80,7 @@ contract('HashtagController', function(accounts) {
   // describe('Convert ARC to SWT fails without having an allowance', function() {
 
   //   it("should not be able to convert without allowance", function(done) {
-  //     swtConverter.convert(1).then(function() {
+  //     hashtagContract.convert(1).then(function() {
   //       assert.fail(null, null, 'This function should throw');
   //       done();
   //     }).catch(function() {
@@ -86,7 +99,7 @@ contract('HashtagController', function(accounts) {
   //   });
 
   //   it("should have zero balance on SWT token contract", function(done) {
-  //     var balance = hashtagToken.balanceOf.call(accounts[0]).then(function(balance) {
+  //     var balance = swtToken.balanceOf.call(accounts[0]).then(function(balance) {
   //       assert.equal(balance.valueOf(), 0, "account not correct amount");
   //       done();
   //     });
@@ -95,14 +108,14 @@ contract('HashtagController', function(accounts) {
   //   it("should give allowance to convert", function(done) {
   //     var balance = arcToken.balanceOf.call(accounts[0]).then(function(balance) {
   //       assert.equal(balance.valueOf(), 1000 * 1e18, "account not correct amount");
-  //       arcToken.approve(swtConverter.address, balance).then(function() {
+  //       arcToken.approve(hashtagContract.address, balance).then(function() {
   //         done();
   //       });
   //     });
   //   });
 
   //   it("allowance should be visible in ARC token contract", function(done) {
-  //     var balance = arcToken.allowance.call(accounts[0], swtConverter.address).then(function(allowanceamount) {
+  //     var balance = arcToken.allowance.call(accounts[0], hashtagContract.address).then(function(allowanceamount) {
   //       assert.equal(allowanceamount.valueOf(), 1000 * 1e18, "allowanceamount not correct");
   //       done();
   //     });
@@ -110,7 +123,7 @@ contract('HashtagController', function(accounts) {
 
   //   it("should convert half of the ARC of this owner", function(done) {
   //     var balance = arcToken.balanceOf.call(accounts[0]).then(function(balance) {
-  //       swtConverter.convert(balance.valueOf() / 2, {
+  //       hashtagContract.convert(balance.valueOf() / 2, {
   //         gas: 400000
   //       }).then(function() {
   //         done();
@@ -122,7 +135,7 @@ contract('HashtagController', function(accounts) {
   //   });
 
   //   it("should have the correct balance on SWT token contract", function(done) {
-  //     var balance = hashtagToken.balanceOf.call(accounts[0]).then(function(balance) {
+  //     var balance = swtToken.balanceOf.call(accounts[0]).then(function(balance) {
   //       assert.equal(balance.valueOf(), 1000 / 2 * 1e18, "account not correct amount");
   //       done();
   //     });
@@ -137,7 +150,7 @@ contract('HashtagController', function(accounts) {
 
   //   it("should convert remaining balance of this owner", function(done) {
   //     var balance = arcToken.balanceOf.call(accounts[0]).then(function(balance) {
-  //       swtConverter.convert(balance.valueOf(), {
+  //       hashtagContract.convert(balance.valueOf(), {
   //         gas: 400000
   //       }).then(function() {
   //         done();
@@ -149,7 +162,7 @@ contract('HashtagController', function(accounts) {
   //   });
 
   //   it("should not be able to convert more tokens", function(done) {
-  //     swtConverter.convert(1, {
+  //     hashtagContract.convert(1, {
   //       gas: 400000
   //     }).then(function() {
   //       assert.fail(null, null, 'This function should throw', e);
@@ -160,7 +173,7 @@ contract('HashtagController', function(accounts) {
   //   });
 
   //   it("should have new balance on SWT token contract", function(done) {
-  //     var balance = hashtagToken.balanceOf.call(accounts[0]).then(function(balance) {
+  //     var balance = swtToken.balanceOf.call(accounts[0]).then(function(balance) {
   //       assert.equal(balance.valueOf(), 1000 * 1e18, "account not correct amount");
   //       done();
   //     });
@@ -185,7 +198,7 @@ contract('HashtagController', function(accounts) {
 
   //   it("should be able to clone this contract at block " + self.web3.eth.blockNumber, function(done) {
 
-  //     var watcher = hashtagToken.NewCloneToken();
+  //     var watcher = swtToken.NewCloneToken();
   //     watcher.watch(function(error, result) {
   //       console.log('new clone contract at ', result.args._cloneToken);
   //       clone0 = MiniMeToken.at(self.web3.toHex(result.args._cloneToken));
@@ -193,7 +206,7 @@ contract('HashtagController', function(accounts) {
   //       done();
   //     });
 
-  //     hashtagToken.createCloneToken(
+  //     swtToken.createCloneToken(
   //       "Swarm Voting Token",
   //       18,
   //       "SVT",
@@ -221,7 +234,7 @@ contract('HashtagController', function(accounts) {
   // describe('Cloning of contract at block 0', function() {
 
   //   it("should be able to clone this contract at block 0", function(done) {
-  //     var watcher = hashtagToken.NewCloneToken();
+  //     var watcher = swtToken.NewCloneToken();
   //     watcher.watch(function(error, result) {
   //       console.log('new clone contract at ', result.args._cloneToken);
   //       clone1 = MiniMeToken.at(self.web3.toHex(result.args._cloneToken));
@@ -229,7 +242,7 @@ contract('HashtagController', function(accounts) {
   //       done();
   //     });
 
-  //     hashtagToken.createCloneToken(
+  //     swtToken.createCloneToken(
   //       "Swarm Voting Token",
   //       18,
   //       "SVT",
