@@ -29,6 +29,7 @@ contract Hashtag is Ownable {
             'HTAG',
             false
 		);
+		token = MiniMeToken(_token);
 	}
 
 	function getRepTokenAddress()returns(address){

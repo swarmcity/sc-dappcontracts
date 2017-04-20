@@ -8,6 +8,7 @@ contract('Hashtag', function(accounts) {
   var swtToken; // this is the MiniMeToken version
   var miniMeTokenFactory;
   var hashtagContract;
+  var dealContract;
 
   var self = this;
 
@@ -48,12 +49,13 @@ contract('Hashtag', function(accounts) {
     });
 
     it("should mint tokens for accounts[2] ( counterparty ) ", function(done) {
-      swtToken.generateTokens(accounts[2], 200).then(function() {
+      swtToken.generateTokens(accounts[2], 500).then(function() {
         done();
       });
     });
 
     it("should deploy Hashtag", function(done) {
+      // commission for this hastag is 10 SWT
       Hashtag.new(swtToken.address, "pioneer", 10, {
         gas: 4700000
       }).then(function(instance) {
@@ -75,6 +77,47 @@ contract('Hashtag', function(accounts) {
         done();
       });
     });
+    it("should allow the Deal to get tokens from accounts[1]", function(done) {
+      swtToken.approve(dealContract.address, 100, {
+        from: accounts[1]
+      }).then(function(instance) {
+        done();
+      });
+    });
+
+    it("should fund the Deal", function(done) {
+      dealContract.fund(100, {
+        from: accounts[1]
+      }).then(function(instance) {
+        done();
+      });
+    });
+
+    it("should allow the Deal to get tokens from accounts[2]", function(done) {
+      swtToken.approve(dealContract.address, 10, {
+        from: accounts[2]
+      }).then(function(instance) {
+        done();
+      });
+    });
+
+   it("should claim the Deal by accounts[2]", function(done) {
+      dealContract.claim(10, {
+        from: accounts[2]
+      }).then(function(instance) {
+        done();
+      });
+    });
+
+
+   it("should approve the Deal by accounts[1]", function(done) {
+      dealContract.approve( {
+        from: accounts[1]
+      }).then(function(instance) {
+        done();
+      });
+    });
+
   });
 
   // describe('Convert ARC to SWT fails without having an allowance', function() {

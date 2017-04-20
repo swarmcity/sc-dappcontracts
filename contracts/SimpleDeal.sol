@@ -50,7 +50,7 @@ contract SimpleDeal is Ownable, SafeMath {
 
 	function fund(uint _value) onlyOwner {
 		// only open deals can be funded.
-		if (dealStatus != DealStatuses.OwnerFunded){
+		if (dealStatus != DealStatuses.Open){
 			throw;
 		}
 
@@ -59,7 +59,7 @@ contract SimpleDeal is Ownable, SafeMath {
 			throw;
 		}
 
-		// fund this contract - (this deal needs an allowance from owner)
+		//fund this contract - (this deal needs an allowance from owner)
 		if (!hashtagToken.transferFrom(msg.sender,this,_value)){
 			throw;
 		}
@@ -72,7 +72,7 @@ contract SimpleDeal is Ownable, SafeMath {
 	function claim(uint _value) {
 
 		// only counterparty can fund , and must match the threshold and the deal must be funded by owner
-		if (msg.sender != counterparty || _value < counterpartyThreshold || dealStatus != DealStatuses.Open){
+		if (msg.sender != counterparty || _value < counterpartyThreshold || dealStatus != DealStatuses.OwnerFunded){
 			throw;
 		}
 
