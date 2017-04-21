@@ -5,13 +5,22 @@ import '../installed_contracts/zeppelin/contracts/SafeMath.sol';
 import './IHashtag.sol';
 import './IMiniMeToken.sol';
 
+contract SimpleDealFactory {
+	event NewSimpleDeal(address simpleDealAddress);
+	function makeSimpleDeal(address _hashtag, address _counterparty,uint _counterpartyThreshold, bytes32 _dealID){
+		address deal = new SimpleDeal(msg.sender,_hashtag,_counterparty,_counterpartyThreshold,_dealID);
+		IHashtag(_hashtag).registerDeal(deal,msg.sender);
+		NewSimpleDeal(deal);
+	}
+}
+
 contract SimpleDeal is Ownable, SafeMath {
 	bytes32 dealID;
 	address counterparty;
 	uint counterpartyThreshold;
 	mapping(address=>uint) balances;
 	DealStatuses dealStatus;
-	uint hashtagCommission;
+	uint public hashtagCommission;
 
 	IHashtag hashtag;
 	IMiniMeToken hashtagToken;
@@ -30,7 +39,7 @@ contract SimpleDeal is Ownable, SafeMath {
         Resolved
    	}
 
-	function SimpleDeal(address _hashtag, address _counterparty,uint _counterpartyThreshold, bytes32 _dealID){
+	function SimpleDeal(address _owner, address _hashtag, address _counterparty,uint _counterpartyThreshold, bytes32 _dealID){
 		counterparty = _counterparty;
 		counterpartyThreshold = _counterpartyThreshold;
 		dealID = _dealID;
@@ -38,7 +47,9 @@ contract SimpleDeal is Ownable, SafeMath {
 		hashtag = IHashtag(_hashtag);
 		hashtagToken = IMiniMeToken(hashtag.getTokenAddress());
 		hashtagCommission = hashtag.commission();
-		hashtag.registerDeal(this,msg.sender);
+
+		// now change ownership to the actual owner given by the factory.
+		transferOwnership(_owner);		
 	}
 
 	function cancel() onlyOwner {
@@ -92,7 +103,7 @@ contract SimpleDeal is Ownable, SafeMath {
 			throw;
 		}
 
-		// payout the hashtag owner
+		// payout the commission to the hashtag owner
 		if (!hashtagToken.transfer(hashtag.getConflictResolver(),hashtagCommission)){
 			throw;
 		}
@@ -121,12 +132,17 @@ contract SimpleDeal is Ownable, SafeMath {
 
 	// resolve this conflict by sending value to either parties
 	// _amountOwner is sent to the owner
+	// commission is sent to the hashtag owner
 	// the remaining value is sent to the counterparty
 	function resolve(uint _amountOwner){
 		if (msg.sender != hashtag.getConflictResolver()){
 			throw;
 		}
+		// payout the commission to the hashtag owner
+		if (!hashtagToken.transfer(hashtag.getConflictResolver(),hashtagCommission)){ throw; }
+		// payout the allocation that the hashtag owner determined to the owner of this deal
 		if (!hashtagToken.transfer(owner,_amountOwner)){ throw; }
+		// payout the remainder to the counterparty of this deal
 		if (!hashtagToken.transfer(counterparty,hashtagToken.balanceOf(this))){ throw; }
 		dealStatus = DealStatuses.Resolved;
 	}
