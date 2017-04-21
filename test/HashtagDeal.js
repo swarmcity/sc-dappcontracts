@@ -7,6 +7,7 @@ var SimpleDealFactory = artifacts.require("SimpleDealFactory");
 contract('HashtagDeal', function(accounts) {
 
   var swtToken; // this is the MiniMeToken version
+  var hashtagRepToken;
   var miniMeTokenFactory;
   var hashtagContract;
   var dealContract;
@@ -36,7 +37,7 @@ contract('HashtagDeal', function(accounts) {
         true
       ).then(function(_miniMeToken) {
         assert.ok(_miniMeToken.address);
-        console.log('Hashtag token created at address', _miniMeToken.address);
+        console.log('SWT token created at address', _miniMeToken.address);
         swtToken = _miniMeToken;
         done();
       });
@@ -53,6 +54,7 @@ contract('HashtagDeal', function(accounts) {
         done();
       });
     });
+
   });
 
   describe('Hashtag and DealFactory creation flow', function() {
@@ -64,13 +66,37 @@ contract('HashtagDeal', function(accounts) {
       }).then(function(instance) {
         hashtagContract = instance;
         assert.isNotNull(hashtagContract);
-        done();
+
+        hashtagContract.getRepTokenAddress.call().then(function(reptokenaddress) {
+          console.log('hashtag REP token created at address', reptokenaddress);
+          hashtagRepToken = MiniMeToken.at(reptokenaddress);
+          done();
+        });
+
+
+
       });
     });
 
     it("should verify the commission of the  'pioneer' Hashtag", function(done) {
       hashtagContract.commission().then(function(value) {
         assert.equal(value.toNumber(), 33, "commission not set...");
+        done();
+      });
+    });
+
+    it("should see no REP on accounts[1]", function(done) {
+      hashtagRepToken.balanceOf(accounts[1]).then(function(balance) {
+        assert.equal(balance, 0, "accounts[1] REP balance not correct");
+        console.log('Balance of account=', balance.toNumber());
+        done();
+      });
+    });
+
+    it("should see no REP on accounts[2]", function(done) {
+      hashtagRepToken.balanceOf(accounts[2]).then(function(balance) {
+        assert.equal(balance, 0, "accounts[1] REP balance not correct");
+        console.log('Balance of account=', balance.toNumber());
         done();
       });
     });
@@ -221,6 +247,23 @@ contract('HashtagDeal', function(accounts) {
         done();
       });
     });
+
+    it("should see REP on accounts[1]", function(done) {
+      hashtagRepToken.balanceOf(accounts[1]).then(function(balance) {
+        assert.equal(balance, 1, "accounts[1] REP balance not correct");
+        console.log('Balance of account=', balance.toNumber());
+        done();
+      });
+    });
+
+    it("should see REP on accounts[2]", function(done) {
+      hashtagRepToken.balanceOf(accounts[2]).then(function(balance) {
+        assert.equal(balance, 1, "accounts[2] REP balance not correct");
+        console.log('Balance of account=', balance.toNumber());
+        done();
+      });
+    });
+
 
   });
 

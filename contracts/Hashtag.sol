@@ -18,7 +18,7 @@ contract Hashtag is Ownable {
 	string public metadataHash;	// IPFS hash to metadata of this Hashtag
 
 	event DealRegistered(address dealContract);
-	event RepAdded(address to);
+	event RepAdded(address to,uint amount);
 
 	function Hashtag(address _token, address _tokenfactory, string _name,uint _commission,string _metadataHash){
 		name = _name;
@@ -71,19 +71,24 @@ contract Hashtag is Ownable {
 			throw;
 		}
 
+		// of this deal was already registered, throw.
 		if (dealOwners[_dealContract] != 0){
 			throw;
 		}
+
 		dealOwners[_dealContract] = _dealOwner;
 		registeredDeals++;
 		DealRegistered(_dealContract);
 	}
 
-
-	// debug function - remove me ASAP :)
 	function mintRep(address _receiver,uint _amount) {
+		// was the calling contract a registered deal ?
+		if (dealOwners[msg.sender] == 0){
+			throw;
+		}
+
 		rep.generateTokens(_receiver,_amount);
-		RepAdded(_receiver);
+		RepAdded(_receiver,_amount);
 	} 
 
 }

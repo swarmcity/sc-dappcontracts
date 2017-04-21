@@ -112,6 +112,11 @@ contract SimpleDeal is Ownable, SafeMath {
 		if (!hashtagToken.transfer(counterparty,hashtagToken.balanceOf(this))){
 			throw;
 		}
+
+		// award some REP
+		hashtag.mintRep(owner,1);
+		hashtag.mintRep(counterparty,1);
+
 		Approved();
 	}
 
