@@ -37,8 +37,13 @@ contract Hashtag is Ownable {
 		commission = _commission;
 	}
 
+	
 	function setMetadataHash(string _metadataHash) onlyOwner {
 		metadataHash = _metadataHash;
+	}
+
+	function setCommission(uint _newCommission) onlyOwner {
+		commission = _newCommission;
 	}
 
 	function addFactory(address _factoryAddress) onlyOwner {
