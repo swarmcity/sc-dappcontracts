@@ -5,10 +5,10 @@ module.exports = {
       port: 8546,
       network_id: "*"		// Match any network id
     },
- 	live: {
-    	host: "localhost",
-	    port: 8545,
-	    network_id: 1,		// Ethereum public network
-	}    
+   	live: {
+      	host: "localhost",
+  	    port: 8545,
+  	    network_id: 1,		// Ethereum public network
+  	}    
   }
 };

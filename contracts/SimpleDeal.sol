@@ -5,21 +5,12 @@ import '../installed_contracts/zeppelin/contracts/SafeMath.sol';
 import './IHashtag.sol';
 import './IMiniMeToken.sol';
 
-contract SimpleDealFactory {
-	event NewSimpleDeal(address simpleDealAddress);
-	function makeSimpleDeal(address _hashtag, address _counterparty,uint _counterpartyThreshold, bytes32 _dealID){
-		address deal = new SimpleDeal(msg.sender,_hashtag,_counterparty,_counterpartyThreshold,_dealID);
-		IHashtag(_hashtag).registerDeal(deal,msg.sender);
-		NewSimpleDeal(deal);
-	}
-}
-
 contract SimpleDeal is Ownable, SafeMath {
 	bytes32 dealID;
 	address counterparty;
 	uint counterpartyThreshold;
 	mapping(address=>uint) balances;
-	DealStatuses dealStatus;
+	DealStatuses public dealStatus;
 	uint public hashtagCommission;
 
 	IHashtag hashtag;
@@ -36,7 +27,8 @@ contract SimpleDeal is Ownable, SafeMath {
         Ongoing,
         Approved,
         Disputed,
-        Resolved
+        Resolved,
+        Canceled
    	}
 
 	function SimpleDeal(address _owner, address _hashtag, address _counterparty,uint _counterpartyThreshold, bytes32 _dealID){
@@ -53,10 +45,11 @@ contract SimpleDeal is Ownable, SafeMath {
 	}
 
 	function cancel() onlyOwner {
-		if (dealStatus != DealStatuses.Open){
+		if (dealStatus != DealStatuses.Open && dealStatus != DealStatuses.OwnerFunded){
 			throw;
 		}
-		selfdestruct(owner);
+		if (!hashtagToken.transfer(owner,hashtagToken.balanceOf(this))){ throw; }		
+		dealStatus = DealStatuses.Canceled;
 	}
 
 	function fund(uint _value) onlyOwner {
