@@ -87,8 +87,8 @@ contract Hashtag is Ownable {
 	}
 
 	function mintRep(address _receiver,uint _amount) {
-		// was the calling contract a registered deal ?
-		if (dealOwners[msg.sender] == 0){
+		// Only valid DealFactory contracts can mint rep ?
+		if (validFactories[msg.sender] != true){
 			throw;
 		}
 
