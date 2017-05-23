@@ -20,37 +20,6 @@ module.exports = function(callback) {
 
       console.log("Hashtag deployed at", hashtagContract.address);
 
-      self.web3.eth.getTransactionReceipt(instance.transactionHash, function(err, receipt) {
-        console.log('gas used =', receipt.gasUsed);
-        hashtagContract.getRepTokenAddress.call().then(function(reptokenaddress) {
-          console.log('hashtag REP token created at address', reptokenaddress);
-          callback();
-        });
-
-        SimpleDealFactory.new({
-          gas: 2990380,
-          gasprice: gasPrice
-        }).then(function(instance) {
-          simpleDealFactory = instance;
-          console.log('SimpleDealFactory created at address', simpleDealFactory.address);
-
-          self.web3.eth.getTransactionReceipt(instance.transactionHash, function(err, receipt) {
-            console.log('gas used =', receipt.gasUsed);
-
-            hashtagContract.addFactory(simpleDealFactory.address).then(function(res) {
-
-              self.web3.eth.getTransactionReceipt(res.tx, function(err, receipt) {
-                console.log('simpleDealFactory whitelisted');
-                console.log('gas used =', receipt.gasUsed);
-                callback();
-              });
-            });
-          });
-        });
-        // //SimpleDealFactory
-
-      });
-
 
     }).catch(function(e) {
       console.log(e);

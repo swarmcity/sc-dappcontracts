@@ -13,3 +13,7 @@ Manages transactions on a hashtag
 
 Manages a group of service providers
 
+## DealForTwo + DealForTwoFactory
+
+Manages a deal between 2 people within a certain hashtag.
+

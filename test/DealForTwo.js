@@ -13,6 +13,7 @@ contract('DealForTwo', function(accounts) {
   var hashtagContract;
   var dealContract;
   var hashtagcommission = 2;
+  var gasStats = [];
 
   var self = this;
 
@@ -159,7 +160,11 @@ contract('DealForTwo', function(accounts) {
         from: accounts[1],
         gas: 4700000
       }).then(function(res) {
-        console.log('makeDealForTwo -> gas used:',res.receipt.gasUsed);
+        console.log('makeDealForTwo -> gas used:', res.receipt.gasUsed);
+        gasStats.push({
+          name: 'makeDealForTwo',
+          gasUsed: res.receipt.gasUsed
+        });
       });;
 
     });
@@ -168,7 +173,11 @@ contract('DealForTwo', function(accounts) {
     it("should send seeker's funds to the deal", function(done) {
       swtToken.transfer(dealContract.address, 10, {
         from: accounts[1]
-      }).then(function() {
+      }).then(function(res) {
+        gasStats.push({
+          name: 'send Seeker Funds',
+          gasUsed: res.receipt.gasUsed
+        });
         done();
       });
     });
@@ -183,19 +192,27 @@ contract('DealForTwo', function(accounts) {
 
 
     it("should allocate the deal to provider accounts[2]", function(done) {
-      dealForTwoFactory.assignProvider(dealContract.address,accounts[2],10,10, {
+      dealForTwoFactory.assignProvider(dealContract.address, accounts[2], 10, 10, {
         from: accounts[1]
-      }).then(function(balance) {
+      }).then(function(res) {
+        gasStats.push({
+          name: 'assignProvider',
+          gasUsed: res.receipt.gasUsed
+        });
         //assert.equal(balance, 1, "accounts[1] balance not correct after funding");
         //console.log('Balance of account=', balance.toNumber());
         done();
       });
     });
 
-  it("should send provider's funds to the deal", function(done) {
+    it("should send provider's funds to the deal", function(done) {
       swtToken.transfer(dealContract.address, 10, {
         from: accounts[2]
-      }).then(function() {
+      }).then(function(res) {
+        gasStats.push({
+          name: 'send provider funds',
+          gasUsed: res.receipt.gasUsed
+        });
         done();
       });
     });
@@ -211,7 +228,11 @@ contract('DealForTwo', function(accounts) {
     it("should payout the deal by seeker", function(done) {
       dealForTwoFactory.payout(dealContract.address, {
         from: accounts[1]
-      }).then(function(instance) {
+      }).then(function(res) {
+        gasStats.push({
+          name: 'payout',
+          gasUsed: res.receipt.gasUsed
+        });
         done();
       });
     });
@@ -227,13 +248,11 @@ contract('DealForTwo', function(accounts) {
 
     it("should see the payout on the provider's account", function(done) {
       swtToken.balanceOf(accounts[2]).then(function(balance) {
-        assert.equal(balance.toNumber(), 102+10, "deal balance not correct after funding");
+        assert.equal(balance.toNumber(), 102 + 10, "deal balance not correct after funding");
         console.log('Balance of account=', balance.toNumber());
         done();
       });
     });
-
-
 
     it("should see REP on accounts[1]", function(done) {
       hashtagRepToken.balanceOf(accounts[1]).then(function(balance) {
@@ -249,6 +268,17 @@ contract('DealForTwo', function(accounts) {
         console.log('Balance of account=', balance.toNumber());
         done();
       });
+    });
+  });
+  describe('Stats', function() {
+    it("should show stats", function(done) {
+      var cumulatedGas = 0;
+      for (var i = 0; i < gasStats.length; i++) {
+        console.log(gasStats[i]);
+        cumulatedGas += gasStats[i].gasUsed;
+      }
+      console.log('Total gas used', cumulatedGas);
+      done();
     });
   });
 

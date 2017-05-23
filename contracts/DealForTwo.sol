@@ -19,14 +19,11 @@ contract DealForTwo is DealForTwoEnumerable,Ownable {
 		seeker = _seeker;
 		seekerValue = _offerValue;
 		hashtag = _hashtag;
-//		token = IMiniMeToken(_token);
 		status = DealStatuses.Open;
 	}
 
-	function payout(address _to,uint _amount) onlyOwner returns (bool success){
-		//IMiniMeToken a = 
+	function payout(address _to,uint _amount) onlyOwner returns (bool success){ 
 		return IMiniMeToken(hashtag.getTokenAddress()).transfer(_to,_amount);
-		//return token.transfer(_to,_amount);
 	}
 
 	function assignTo(uint _newSeekerValue, address _provider, uint _providerValue) onlyOwner {
