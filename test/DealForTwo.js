@@ -46,14 +46,14 @@ contract('DealForTwo', function(accounts) {
       });
     });
 
-    it("should mint tokens for accounts[1] ( owner ) ", function(done) {
-      swtToken.generateTokens(accounts[1], 101).then(function() {
+    it("should mint tokens for accounts[1] ( seeker ) ", function(done) {
+      swtToken.generateTokens(accounts[1], 100).then(function() {
         done();
       });
     });
 
-    it("should mint tokens for accounts[2] ( counterparty ) ", function(done) {
-      swtToken.generateTokens(accounts[2], 102).then(function() {
+    it("should mint tokens for accounts[2] ( provider ) ", function(done) {
+      swtToken.generateTokens(accounts[2], 300).then(function() {
         done();
       });
     });
@@ -65,7 +65,8 @@ contract('DealForTwo', function(accounts) {
     it("should deploy 'pioneer' Hashtag", function(done) {
       // commission for this hastag is hashtagcommission SWT
       Hashtag.new(swtToken.address, miniMeTokenFactory.address, "pioneer", hashtagcommission, "QmNogiets", {
-        gas: 4700000
+        gas: 4700000,
+        from : accounts[3]
       }).then(function(instance) {
         hashtagContract = instance;
         assert.isNotNull(hashtagContract);
@@ -75,9 +76,6 @@ contract('DealForTwo', function(accounts) {
           hashtagRepToken = MiniMeToken.at(reptokenaddress);
           done();
         });
-
-
-
       });
     });
 
@@ -105,9 +103,10 @@ contract('DealForTwo', function(accounts) {
     });
 
     it("should deploy a dealForTwoFactory", function(done) {
-      DealForTwoFactory.new({
+      DealForTwoFactory.new(hashtagContract.address,{
         gas: 4700000
       }).then(function(instance) {
+//         console.log('makeDealForTwo -> gas used:', res.receipt.gasUsed);
         dealForTwoFactory = instance;
         assert.isNotNull(dealForTwoFactory);
         done();
@@ -116,7 +115,8 @@ contract('DealForTwo', function(accounts) {
 
     it("should add the dealForTwoFactory to the whitelisted factories for this hashtag", function(done) {
       hashtagContract.addFactory(dealForTwoFactory.address, {
-        gas: 4700000
+        gas: 4700000,
+        from : accounts[3]
       }).then(function(instance) {
         done();
       });
@@ -134,101 +134,102 @@ contract('DealForTwo', function(accounts) {
   });
 
   describe('SimpleDeal flow', function() {
-    it("should be created", function(done) {
 
-      var events = dealForTwoFactory.NewDealForTwo({
-        fromBlock: "latest"
+    it("should give seeker allowance to dealfortwo", function(done) {
+      swtToken.approve(dealForTwoFactory.address, 10, {
+        from: accounts[1]
+      }).then(function(res) {
+        console.log('gas used:', res.receipt.gasUsed);
+        gasStats.push({
+          name: 'approve (seeker)',
+          gasUsed: res.receipt.gasUsed
+        });
+        done();
       });
-      var listener = events.watch(function(error, result) {
-        // This will catch all events, regardless of how they originated.
-        if (error == null && result.args && result.args.dealForTwoAddress) {
-          dealContract = DealForTwo.at(result.args.dealForTwoAddress);
-          listener.stopWatching();
-          done();
-        }
-      });
+    });
 
-      // dealForTwoFactory.makeSimpleDeal.estimateGas(hashtagContract.address, accounts[2], 10, 0x123, {
-      //   from: accounts[1],
-      //   gas: 4700000
-      // }).then(function(rez){
-      //   console.log('GAS EST=',rez);
-      //   done();
-      // });
-
-      dealForTwoFactory.makeDealForTwo(hashtagContract.address, 10, {
+    it("should create a new deal", function(done) {
+      dealForTwoFactory.makeDealForTwo("TheDeal", 10, {
         from: accounts[1],
         gas: 4700000
       }).then(function(res) {
-        console.log('makeDealForTwo -> gas used:', res.receipt.gasUsed);
+        console.log('gas used:', res.receipt.gasUsed);
         gasStats.push({
           name: 'makeDealForTwo',
           gasUsed: res.receipt.gasUsed
         });
-      });;
-
-    });
-
-
-    it("should send seeker's funds to the deal", function(done) {
-      swtToken.transfer(dealContract.address, 10, {
-        from: accounts[1]
-      }).then(function(res) {
-        gasStats.push({
-          name: 'send Seeker Funds',
-          gasUsed: res.receipt.gasUsed
-        });
         done();
       });
     });
 
-    it("should see the correct balance on the deal", function(done) {
-      swtToken.balanceOf(dealContract.address).then(function(balance) {
+    it("should see token balance decreased on seeker's account", function(done) {
+      swtToken.balanceOf(accounts[1]).then(function(balance) {
+        assert.equal(balance.toNumber(), 90, "deal balance not correct after funding");
+        console.log('Balance of accounts[1] =', balance.toNumber());
+        done();
+      });
+    });
+
+    it("should see token balance on dealfortwofactory", function(done) {
+      swtToken.balanceOf(dealForTwoFactory.address).then(function(balance) {
         assert.equal(balance.toNumber(), 10, "deal balance not correct after funding");
-        console.log('Balance of deal =', balance.toNumber());
+        console.log('Balance of dealForTwoFactory =', balance.toNumber());
         done();
       });
     });
 
 
-    it("should allocate the deal to provider accounts[2]", function(done) {
-      dealForTwoFactory.assignProvider(dealContract.address, accounts[2], 10, 10, {
-        from: accounts[1]
-      }).then(function(res) {
-        gasStats.push({
-          name: 'assignProvider',
-          gasUsed: res.receipt.gasUsed
-        });
-        //assert.equal(balance, 1, "accounts[1] balance not correct after funding");
-        //console.log('Balance of account=', balance.toNumber());
-        done();
-      });
-    });
-
-    it("should send provider's funds to the deal", function(done) {
-      swtToken.transfer(dealContract.address, 10, {
+    it("should give provider allowance to dealfortwo", function(done) {
+      swtToken.approve(dealForTwoFactory.address, 10, {
         from: accounts[2]
       }).then(function(res) {
+        console.log('gas used:', res.receipt.gasUsed);
         gasStats.push({
-          name: 'send provider funds',
+          name: 'approve (provider)',
           gasUsed: res.receipt.gasUsed
         });
         done();
       });
     });
 
-    it("should see the total funded balance on the deal", function(done) {
-      swtToken.balanceOf(dealContract.address).then(function(balance) {
-        assert.equal(balance.toNumber(), 20, "deal balance not correct after funding");
-        console.log('Balance of deal=', balance.toNumber());
+   it("should execute fundDeal", function(done) {
+      dealForTwoFactory.fundDeal("TheDeal",accounts[1], 10, {
+        from: accounts[2],
+        gas: 4700000
+      }).then(function(res) {
+        console.log('gas used:', res.receipt.gasUsed);
+        gasStats.push({
+          name: 'fundDeal',
+          gasUsed: res.receipt.gasUsed
+        });
         done();
       });
     });
 
-    it("should payout the deal by seeker", function(done) {
-      dealForTwoFactory.payout(dealContract.address, {
-        from: accounts[1]
+
+    it("should see token balance decreased on provider's account", function(done) {
+      swtToken.balanceOf(accounts[2]).then(function(balance) {
+        assert.equal(balance.toNumber(), 290, "deal balance not correct after funding");
+        console.log('Balance of accounts[2] =', balance.toNumber());
+        done();
+      });
+    });
+
+    it("should see token balance on dealfortwofactory", function(done) {
+      swtToken.balanceOf(dealForTwoFactory.address).then(function(balance) {
+        assert.equal(balance.toNumber(), 20, "deal balance not correct after funding");
+        console.log('Balance of dealForTwoFactory =', balance.toNumber());
+        done();
+      });
+    });
+
+
+  it("should approve the deal", function(done) {
+      dealForTwoFactory.payout("TheDeal", {
+        from: accounts[1],
+        gas: 4700000
       }).then(function(res) {
+        console.log('gas used:', res.receipt.gasUsed);
         gasStats.push({
           name: 'payout',
           gasUsed: res.receipt.gasUsed
@@ -238,17 +239,101 @@ contract('DealForTwo', function(accounts) {
     });
 
 
-    it("should see that balance on the deal is 0", function(done) {
-      swtToken.balanceOf(dealContract.address).then(function(balance) {
-        assert.equal(balance.toNumber(), 0, "deal balance not correct after funding");
-        console.log('Balance of deal=', balance.toNumber());
+    // it("should send seeker's funds to the deal", function(done) {
+    //   swtToken.transfer(dealContract.address, 10, {
+    //     from: accounts[1]
+    //   }).then(function(res) {
+    //     gasStats.push({
+    //       name: 'send Seeker Funds',
+    //       gasUsed: res.receipt.gasUsed
+    //     });
+    //     done();
+    //   });
+    // });
+
+    // it("should see the correct balance on the deal", function(done) {
+    //   swtToken.balanceOf(dealContract.address).then(function(balance) {
+    //     assert.equal(balance.toNumber(), 10, "deal balance not correct after funding");
+    //     console.log('Balance of deal =', balance.toNumber());
+    //     done();
+    //   });
+    // });
+
+
+    // it("should allocate the deal to provider accounts[2]", function(done) {
+    //   dealForTwoFactory.assignProvider(dealContract.address, accounts[2], 10, 10, {
+    //     from: accounts[1]
+    //   }).then(function(res) {
+    //     gasStats.push({
+    //       name: 'assignProvider',
+    //       gasUsed: res.receipt.gasUsed
+    //     });
+    //     //assert.equal(balance, 1, "accounts[1] balance not correct after funding");
+    //     //console.log('Balance of account=', balance.toNumber());
+    //     done();
+    //   });
+    // });
+
+    // it("should send provider's funds to the deal", function(done) {
+    //   swtToken.transfer(dealContract.address, 10, {
+    //     from: accounts[2]
+    //   }).then(function(res) {
+    //     gasStats.push({
+    //       name: 'send provider funds',
+    //       gasUsed: res.receipt.gasUsed
+    //     });
+    //     done();
+    //   });
+    // });
+
+    // it("should see the total funded balance on the deal", function(done) {
+    //   swtToken.balanceOf(dealContract.address).then(function(balance) {
+    //     assert.equal(balance.toNumber(), 20, "deal balance not correct after funding");
+    //     console.log('Balance of deal=', balance.toNumber());
+    //     done();
+    //   });
+    // });
+
+    // it("should payout the deal by seeker", function(done) {
+    //   dealForTwoFactory.payout(dealContract.address, {
+    //     from: accounts[1]
+    //   }).then(function(res) {
+    //     gasStats.push({
+    //       name: 'payout',
+    //       gasUsed: res.receipt.gasUsed
+    //     });
+    //     done();
+    //   });
+    // });
+
+
+    // it("should see that balance on the deal is 0", function(done) {
+    //   swtToken.balanceOf(dealContract.address).then(function(balance) {
+    //     assert.equal(balance.toNumber(), 0, "deal balance not correct after funding");
+    //     console.log('Balance of deal=', balance.toNumber());
+    //     done();
+    //   });
+    // });
+
+    it("should see the balance of the DealForTwoFactory is correct", function(done) {
+      swtToken.balanceOf(dealForTwoFactory.address).then(function(balance) {
+        assert.equal(balance.toNumber(), 0, " balance not correct");
+        console.log('Balance of account=', balance.toNumber());
         done();
       });
     });
 
     it("should see the payout on the provider's account", function(done) {
       swtToken.balanceOf(accounts[2]).then(function(balance) {
-        assert.equal(balance.toNumber(), 102 + 10, "deal balance not correct after funding");
+        assert.equal(balance.toNumber(), 300 + 10 - 2, " balance not correct");
+        console.log('Balance of account=', balance.toNumber());
+        done();
+      });
+    });
+
+    it("should see the payout of the commision on the hashtag owner's account", function(done) {
+      swtToken.balanceOf(accounts[3]).then(function(balance) {
+        assert.equal(balance.toNumber(), 2, " balance not correct");
         console.log('Balance of account=', balance.toNumber());
         done();
       });
