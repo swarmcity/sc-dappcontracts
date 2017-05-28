@@ -385,4 +385,57 @@ contract('DealForTwo', function(accounts) {
   });
 
 
+  describe('DealForTwo in wrong order', function() {
+
+    it("should give seeker allowance to dealfortwo", function(done) {
+      swtToken.approve(dealForTwoFactory.address, 10, {
+        from: accounts[1]
+      }).then(function(res) {
+        console.log('gas used:', res.receipt.gasUsed);
+        gasStats.push({
+          name: 'approve (seeker)',
+          gasUsed: res.receipt.gasUsed
+        });
+        done();
+      });
+    });
+
+    it("create a new deal that could never cover the commission should throw", function(done) {
+      dealForTwoFactory.makeDealForTwo("TheDeal5", 10, {
+        from: accounts[1],
+        gas: 4700000
+      }).then(function(res) {
+        done();
+      }).catch(function(e) {
+        assert.fail(null, null, 'this function should not throw', e);
+        done();
+      });
+    });
+
+    it("fund an existing deal but with no allowance should throw", function(done) {
+      dealForTwoFactory.fundDeal("TheDeal4", accounts[1], 10, {
+        from: accounts[2],
+        gas: 4700000
+      }).then(function(res) {
+        assert.fail(null, null, 'this function should throw', e);
+        done();
+      }).catch(function(e) {
+        done();
+      });
+    });
+
+    it("payout a non-funded deal should throw", function(done) {
+      dealForTwoFactory.payout("TheDeal4", {
+        from: accounts[1],
+        gas: 4700000
+      }).then(function(res) {
+        assert.fail(null, null, 'this function should throw', e);
+        done();
+      }).catch(function(e) {
+        done();
+      });
+    });
+  });
+
+
 });
