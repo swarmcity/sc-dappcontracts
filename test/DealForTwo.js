@@ -3,7 +3,6 @@ var MiniMeToken = artifacts.require("./MiniMeToken.sol");
 var Hashtag = artifacts.require("./Hashtag.sol");
 var DealForTwo = artifacts.require("./DealForTwo.sol");
 var DealForTwoFactory = artifacts.require("./DealForTwoFactory.sol");
-//var DealForTwoFactory = artifacts.require("./DealForTwoFactory.sol");
 
 contract('DealForTwo', function(accounts) {
 
@@ -66,7 +65,7 @@ contract('DealForTwo', function(accounts) {
       // commission for this hastag is hashtagcommission SWT
       Hashtag.new(swtToken.address, miniMeTokenFactory.address, "pioneer", hashtagcommission, "QmNogiets", {
         gas: 4700000,
-        from : accounts[3]
+        from: accounts[3]
       }).then(function(instance) {
         hashtagContract = instance;
         assert.isNotNull(hashtagContract);
@@ -103,10 +102,10 @@ contract('DealForTwo', function(accounts) {
     });
 
     it("should deploy a dealForTwoFactory", function(done) {
-      DealForTwoFactory.new(hashtagContract.address,{
+      DealForTwoFactory.new(hashtagContract.address, {
         gas: 4700000
       }).then(function(instance) {
-//         console.log('makeDealForTwo -> gas used:', res.receipt.gasUsed);
+        //         console.log('makeDealForTwo -> gas used:', res.receipt.gasUsed);
         dealForTwoFactory = instance;
         assert.isNotNull(dealForTwoFactory);
         done();
@@ -116,7 +115,7 @@ contract('DealForTwo', function(accounts) {
     it("should add the dealForTwoFactory to the whitelisted factories for this hashtag", function(done) {
       hashtagContract.addFactory(dealForTwoFactory.address, {
         gas: 4700000,
-        from : accounts[3]
+        from: accounts[3]
       }).then(function(instance) {
         done();
       });
@@ -133,7 +132,7 @@ contract('DealForTwo', function(accounts) {
 
   });
 
-  describe('SimpleDeal flow', function() {
+  describe('SimpleDeal happy flow', function() {
 
     it("should give seeker allowance to dealfortwo", function(done) {
       swtToken.approve(dealForTwoFactory.address, 10, {
@@ -192,8 +191,9 @@ contract('DealForTwo', function(accounts) {
       });
     });
 
-   it("should execute fundDeal", function(done) {
-      dealForTwoFactory.fundDeal("TheDeal",accounts[1], 10, {
+
+    it("should execute fundDeal", function(done) {
+      dealForTwoFactory.fundDeal("TheDeal", accounts[1], 10, {
         from: accounts[2],
         gas: 4700000
       }).then(function(res) {
@@ -224,7 +224,7 @@ contract('DealForTwo', function(accounts) {
     });
 
 
-  it("should approve the deal", function(done) {
+    it("should approve the deal", function(done) {
       dealForTwoFactory.payout("TheDeal", {
         from: accounts[1],
         gas: 4700000
@@ -238,82 +238,6 @@ contract('DealForTwo', function(accounts) {
       });
     });
 
-
-    // it("should send seeker's funds to the deal", function(done) {
-    //   swtToken.transfer(dealContract.address, 10, {
-    //     from: accounts[1]
-    //   }).then(function(res) {
-    //     gasStats.push({
-    //       name: 'send Seeker Funds',
-    //       gasUsed: res.receipt.gasUsed
-    //     });
-    //     done();
-    //   });
-    // });
-
-    // it("should see the correct balance on the deal", function(done) {
-    //   swtToken.balanceOf(dealContract.address).then(function(balance) {
-    //     assert.equal(balance.toNumber(), 10, "deal balance not correct after funding");
-    //     console.log('Balance of deal =', balance.toNumber());
-    //     done();
-    //   });
-    // });
-
-
-    // it("should allocate the deal to provider accounts[2]", function(done) {
-    //   dealForTwoFactory.assignProvider(dealContract.address, accounts[2], 10, 10, {
-    //     from: accounts[1]
-    //   }).then(function(res) {
-    //     gasStats.push({
-    //       name: 'assignProvider',
-    //       gasUsed: res.receipt.gasUsed
-    //     });
-    //     //assert.equal(balance, 1, "accounts[1] balance not correct after funding");
-    //     //console.log('Balance of account=', balance.toNumber());
-    //     done();
-    //   });
-    // });
-
-    // it("should send provider's funds to the deal", function(done) {
-    //   swtToken.transfer(dealContract.address, 10, {
-    //     from: accounts[2]
-    //   }).then(function(res) {
-    //     gasStats.push({
-    //       name: 'send provider funds',
-    //       gasUsed: res.receipt.gasUsed
-    //     });
-    //     done();
-    //   });
-    // });
-
-    // it("should see the total funded balance on the deal", function(done) {
-    //   swtToken.balanceOf(dealContract.address).then(function(balance) {
-    //     assert.equal(balance.toNumber(), 20, "deal balance not correct after funding");
-    //     console.log('Balance of deal=', balance.toNumber());
-    //     done();
-    //   });
-    // });
-
-    // it("should payout the deal by seeker", function(done) {
-    //   dealForTwoFactory.payout(dealContract.address, {
-    //     from: accounts[1]
-    //   }).then(function(res) {
-    //     gasStats.push({
-    //       name: 'payout',
-    //       gasUsed: res.receipt.gasUsed
-    //     });
-    //     done();
-    //   });
-    // });
-
-
-    // it("should see that balance on the deal is 0", function(done) {
-    //   swtToken.balanceOf(dealContract.address).then(function(balance) {
-    //     assert.equal(balance.toNumber(), 0, "deal balance not correct after funding");
-    //     console.log('Balance of deal=', balance.toNumber());
-    //     done();
-    //   });
-    // });
 
     it("should see the balance of the DealForTwoFactory is correct", function(done) {
       swtToken.balanceOf(dealForTwoFactory.address).then(function(balance) {
@@ -356,7 +280,7 @@ contract('DealForTwo', function(accounts) {
     });
   });
   describe('Stats', function() {
-    it("should show stats", function(done) {
+    it("should show stats of Happy Flow", function(done) {
       var cumulatedGas = 0;
       for (var i = 0; i < gasStats.length; i++) {
         console.log(gasStats[i]);
@@ -366,5 +290,99 @@ contract('DealForTwo', function(accounts) {
       done();
     });
   });
+
+
+  describe('DealForTwo that doesn\'t exist error-logic', function() {
+
+    it("create a new deal without an allowance should throw", function(done) {
+      dealForTwoFactory.makeDealForTwo("TheDeal2", 10, {
+        from: accounts[1],
+        gas: 4700000
+      }).then(function(res) {
+        assert.fail(null, null, 'this function should throw', e);
+        done();
+      }).catch(function(e) {
+        done();
+      });
+    });
+
+    it("approve a non-existing deal should throw", function(done) {
+      dealForTwoFactory.fundDeal("TheDeal3", accounts[1], 10, {
+        from: accounts[2],
+        gas: 4700000
+      }).then(function(res) {
+        assert.fail(null, null, 'this function should throw', e);
+        done();
+      }).catch(function(e) {
+        done();
+      });
+    });
+
+    it("payout a non-existing deal should throw", function(done) {
+      dealForTwoFactory.payout("TheDeal3", {
+        from: accounts[1],
+        gas: 4700000
+      }).then(function(res) {
+        assert.fail(null, null, 'this function should throw', e);
+        done();
+      }).catch(function(e) {
+        done();
+      });
+    });
+  });
+
+
+  describe('DealForTwo in wrong order', function() {
+
+    it("should give seeker allowance to dealfortwo", function(done) {
+      swtToken.approve(dealForTwoFactory.address, 10, {
+        from: accounts[1]
+      }).then(function(res) {
+        console.log('gas used:', res.receipt.gasUsed);
+        gasStats.push({
+          name: 'approve (seeker)',
+          gasUsed: res.receipt.gasUsed
+        });
+        done();
+      });
+    });
+
+    it("create a new deal should work", function(done) {
+      dealForTwoFactory.makeDealForTwo("TheDeal4", 10, {
+        from: accounts[1],
+        gas: 4700000
+      }).then(function(res) {
+        done();
+      }).catch(function(e) {
+        assert.fail(null, null, 'this function should not throw', e);
+        done();
+      });
+    });
+
+    it("fund an existing deal but wit no allowance should throw", function(done) {
+      dealForTwoFactory.fundDeal("TheDeal4", accounts[1], 10, {
+        from: accounts[2],
+        gas: 4700000
+      }).then(function(res) {
+        assert.fail(null, null, 'this function should throw', e);
+        done();
+      }).catch(function(e) {
+        done();
+      });
+    });
+
+    it("payout a non-funded deal should throw", function(done) {
+      dealForTwoFactory.payout("TheDeal4", {
+        from: accounts[1],
+        gas: 4700000
+      }).then(function(res) {
+        assert.fail(null, null, 'this function should throw', e);
+        done();
+      }).catch(function(e) {
+        done();
+      });
+    });
+  });
+
 
 });
