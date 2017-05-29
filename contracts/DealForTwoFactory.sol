@@ -39,8 +39,55 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 
 		// if it's funded - fill in the details
 		deals[sha3(msg.sender,_dealid)] = dealStruct(DealStatuses.Open,hashtag.commission(),_offerValue,0);
+	}
 
-	
+	function cancelDeal(string _dealid){
+		dealStruct d = deals[sha3(msg.sender,_dealid)];
+		if (d.dealValue > 0 && d.provider == 0x0)
+		{
+			// cancel this Deal
+			if (!hashtagToken.transfer(msg.sender,d.dealValue)){ throw; }
+			deals[sha3(msg.sender,_dealid)].status = DealStatuses.Canceled;
+		}
+	}
+
+	// seeker or provider can choose to dispute an ongoing deal
+	function dispute(string _dealid, address _dealowner){
+		dealStruct d = deals[sha3(_dealowner,_dealid)];
+		if (d.status != DealStatuses.Open){ throw; }
+
+		if (msg.sender == _dealowner){
+			// seeker goes in conflict
+
+			// can only be only when there is a provider
+			if (d.provider == 0x0 ) { throw; }
+
+		}else{
+			// if not the seeker, only the provider can go in conflict
+			if (d.provider != msg.sender) { throw; }
+		}
+		// mark the deal as Disputed
+		deals[sha3(_dealowner,_dealid)].status = DealStatuses.Disputed;
+	}
+
+	// conflict resolver can resolve a disputed deal
+	function resolve(string _dealid, address _dealowner, uint _seekerFraction){
+		dealStruct d = deals[sha3(_dealowner,_dealid)];
+		
+		// this function can only be called by the current conflict resolver of the hastag
+		if (msg.sender != hashtag.getConflictResolver()){ throw; }
+
+		// only disputed deals can be resolved
+		if (d.status != DealStatuses.Disputed) { throw; }
+
+		// send the seeker fraction back to the dealowner
+		if (!hashtagToken.transfer(_dealowner,_seekerFraction)){ throw; }
+
+		// send the remaining deal value back to the provider
+		if (!hashtagToken.transfer(d.provider,d.dealValue - _seekerFraction)){ throw; }
+
+		deals[sha3(_dealowner,_dealid)].status = DealStatuses.Resolved;
+
 	}
 
 	function fundDeal(string _dealid, address _dealowner){
