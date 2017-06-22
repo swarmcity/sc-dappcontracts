@@ -8,9 +8,11 @@ module.exports = function(callback) {
 
     console.log('gasprice = ', gasPrice.toNumber());
 
-    var hashtagContract = Hashtag.at('0x5c21b622ac0a51d5b02060d2c483b26252939eee');
+    // HASHTAG GOES HERE
+    var hashtagContract = Hashtag.at('0x2e17d4c60a2fc3f1d586d2ca9d66b52f80a043c0');
 
-    hashtagContract.addFactory('0xab8243ded804e04f23fb3864fb2991c98dc0f59f', {
+    // FACTORY GOES HERE
+    hashtagContract.addFactory('0xaae46afad1dddb0666cd939e62fd58d81470ec4e', {
       gas: 200000,
       gasPrice: gasPrice
     }).then(function(res) {

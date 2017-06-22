@@ -29,7 +29,7 @@ contract Hashtag is Ownable {
             0,
             _name,
             0,
-            'HTAG',
+            'SWR',
             false
 		);
 		token = MiniMeToken(_token);

@@ -2,7 +2,8 @@ var Hashtag = artifacts.require("./Hashtag.sol");
 var DealForTwoFactory = artifacts.require("./DealForTwoFactory.sol");
 
 module.exports = function(callback) {
-  var hashtagContract = "0x5c21b622ac0a51d5b02060d2c483b26252939eee";
+  //FILL HASHTAG HERE
+  var hashtagContract = "0x2e17d4c60a2fc3f1d586d2ca9d66b52f80a043c0";
   //var swtTokenFactory = "0x1ed1fbe0333a9e81746dff37df107c9cefe8d787";
 
   console.log('Deploying DealForTwoFactory. hashtag at ', hashtagContract);

@@ -17,8 +17,8 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 
 	mapping(bytes32=>dealStruct) deals;
 
-	IHashtag hashtag;
-	IMiniMeToken hashtagToken;
+	IHashtag public hashtag;
+	IMiniMeToken public hashtagToken;
 
 	function DealForTwoFactory(IHashtag _hashtag){
 		hashtag = _hashtag;
@@ -110,6 +110,11 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 		deals[key].provider = msg.sender;
 	}
 
+	function readDeal(string _dealid, address _dealowner) returns(DealStatuses status, uint commissionValue, uint dealValue, address provider){
+		bytes32 key = sha3(_dealowner,_dealid);
+		return (deals[key].status,deals[key].commissionValue,deals[key].dealValue,deals[key].provider);
+	}
+
 	function payout(string _dealid){
 
 		bytes32 key = sha3(msg.sender,_dealid);
@@ -126,8 +131,8 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 		if (!hashtagToken.transfer(d.provider,d.dealValue * 2 - d.commissionValue)){ throw; }
 
 		// mint REP for both parties
-		hashtag.mintRep(d.provider,1);
-		hashtag.mintRep(msg.sender,1);
+		hashtag.mintRep(d.provider,5);
+		hashtag.mintRep(msg.sender,5);
 
 		// mark the deal as done
 		deals[key].status = DealStatuses.Done;
