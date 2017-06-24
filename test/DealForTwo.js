@@ -265,7 +265,7 @@ contract('DealForTwo', function(accounts) {
 
     it("should see REP on accounts[1]", function(done) {
       hashtagRepToken.balanceOf(accounts[1]).then(function(balance) {
-        assert.equal(balance, 1, "accounts[1] REP balance not correct");
+        assert.equal(balance.toNumber(), 5, "accounts[1] REP balance not correct");
         console.log('Balance of account=', balance.toNumber());
         done();
       });
@@ -273,7 +273,7 @@ contract('DealForTwo', function(accounts) {
 
     it("should see REP on accounts[2]", function(done) {
       hashtagRepToken.balanceOf(accounts[2]).then(function(balance) {
-        assert.equal(balance, 1, "accounts[2] REP balance not correct");
+        assert.equal(balance.toNumber(), 5, "accounts[2] REP balance not correct");
         console.log('Balance of account=', balance.toNumber());
         done();
       });
