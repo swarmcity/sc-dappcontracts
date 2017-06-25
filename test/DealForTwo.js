@@ -148,6 +148,7 @@ contract('DealForTwo', function(accounts) {
     });
 
     it("should create a new deal", function(done) {
+      var watcher = dealForTwoFactory.NewDealForTwo();
       dealForTwoFactory.makeDealForTwo("TheDeal", 10, {
         from: accounts[1],
         gas: 4700000
@@ -157,8 +158,13 @@ contract('DealForTwo', function(accounts) {
           name: 'makeDealForTwo',
           gasUsed: res.receipt.gasUsed
         });
-        done();
-      });
+        return watcher.get();
+      }).then(function(events) {
+        // now we'll check that the events are correct
+        assert.equal(events.length, 1);
+        assert.equal(events[0].args.dealid.valueOf(), "TheDeal");
+        assert.equal(events[0].args.dealowner.valueOf(), accounts[1]);
+      }).then(done);
     });
 
     it("should see token balance decreased on seeker's account", function(done) {

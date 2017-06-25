@@ -6,7 +6,7 @@ import '../installed_contracts/zeppelin/contracts/ownership/Ownable.sol';
 import './DealForTwoEnumerable.sol';
 
 contract DealForTwoFactory is DealForTwoEnumerable {
-	event NewDealForTwo(address dealForTwoAddress);
+	event NewDealForTwo(string dealid, address dealowner);
 
 	struct dealStruct {
 		DealStatuses status;
@@ -39,6 +39,7 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 
 		// if it's funded - fill in the details
 		deals[sha3(msg.sender,_dealid)] = dealStruct(DealStatuses.Open,hashtag.commission(),_offerValue,0);
+		NewDealForTwo(_dealid, msg.sender);
 	}
 
 	function cancelDeal(string _dealid){
@@ -110,7 +111,7 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 		deals[key].provider = msg.sender;
 	}
 
-	function readDeal(string _dealid, address _dealowner) returns(DealStatuses status, uint commissionValue, uint dealValue, address provider){
+	function readDeal(string _dealid, address _dealowner) constant returns(DealStatuses status, uint commissionValue, uint dealValue, address provider){
 		bytes32 key = sha3(_dealowner,_dealid);
 		return (deals[key].status,deals[key].commissionValue,deals[key].dealValue,deals[key].provider);
 	}
