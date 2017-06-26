@@ -6,7 +6,9 @@ import '../installed_contracts/zeppelin/contracts/ownership/Ownable.sol';
 import './DealForTwoEnumerable.sol';
 
 contract DealForTwoFactory is DealForTwoEnumerable {
-	event NewDealForTwo(address dealForTwoAddress);
+	event NewDealForTwo(address owner,string dealid, string metadata);
+	event FundDeal(address provider,address owner, string dealid,string metadata);
+	event DealStatusChange(address owner,string dealid,DealStatuses newstatus,string metadata);
 
 	struct dealStruct {
 		DealStatuses status;
@@ -25,7 +27,7 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 		hashtagToken = IMiniMeToken(_hashtag.getTokenAddress());
 	}
 
-	function makeDealForTwo(string _dealid, uint _offerValue){
+	function makeDealForTwo(string _dealid, uint _offerValue, string _metadata){
 
 		// make sure there is enough to pay the commission later on
 		if (hashtag.commission() / 2 > _offerValue){
@@ -39,20 +41,25 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 
 		// if it's funded - fill in the details
 		deals[sha3(msg.sender,_dealid)] = dealStruct(DealStatuses.Open,hashtag.commission(),_offerValue,0);
+
+		NewDealForTwo(msg.sender,_dealid,_metadata);
+
 	}
 
-	function cancelDeal(string _dealid){
+	function cancelDeal(string _dealid,string _metadata){
 		dealStruct d = deals[sha3(msg.sender,_dealid)];
 		if (d.dealValue > 0 && d.provider == 0x0)
 		{
 			// cancel this Deal
 			if (!hashtagToken.transfer(msg.sender,d.dealValue)){ throw; }
 			deals[sha3(msg.sender,_dealid)].status = DealStatuses.Canceled;
+
+			DealStatusChange(msg.sender,_dealid,DealStatuses.Canceled,_metadata);
 		}
 	}
 
 	// seeker or provider can choose to dispute an ongoing deal
-	function dispute(string _dealid, address _dealowner){
+	function dispute(string _dealid, address _dealowner,string _metadata){
 		dealStruct d = deals[sha3(_dealowner,_dealid)];
 		if (d.status != DealStatuses.Open){ throw; }
 
@@ -68,10 +75,11 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 		}
 		// mark the deal as Disputed
 		deals[sha3(_dealowner,_dealid)].status = DealStatuses.Disputed;
+		DealStatusChange(_dealowner,_dealid,DealStatuses.Disputed,_metadata);
 	}
 
 	// conflict resolver can resolve a disputed deal
-	function resolve(string _dealid, address _dealowner, uint _seekerFraction){
+	function resolve(string _dealid, address _dealowner, uint _seekerFraction, string _metadata){
 		dealStruct d = deals[sha3(_dealowner,_dealid)];
 		
 		// this function can only be called by the current conflict resolver of the hastag
@@ -87,10 +95,11 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 		if (!hashtagToken.transfer(d.provider,d.dealValue - _seekerFraction)){ throw; }
 
 		deals[sha3(_dealowner,_dealid)].status = DealStatuses.Resolved;
+		DealStatusChange(_dealowner,_dealid,DealStatuses.Resolved,_metadata);
 
 	}
 
-	function fundDeal(string _dealid, address _dealowner){
+	function fundDeal(string _dealid, address _dealowner,string _metadata){
 		
 		bytes32 key = sha3(_dealowner,_dealid);
 		
@@ -108,6 +117,8 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 
 		// fill in the address of the provider ( to payout the deal later on )
 		deals[key].provider = msg.sender;
+
+		FundDeal(msg.sender,_dealowner,_dealid,_metadata);
 	}
 
 	function readDeal(string _dealid, address _dealowner) returns(DealStatuses status, uint commissionValue, uint dealValue, address provider){
@@ -115,7 +126,7 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 		return (deals[key].status,deals[key].commissionValue,deals[key].dealValue,deals[key].provider);
 	}
 
-	function payout(string _dealid){
+	function payout(string _dealid,string _metadata){
 
 		bytes32 key = sha3(msg.sender,_dealid);
 
@@ -136,6 +147,8 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 
 		// mark the deal as done
 		deals[key].status = DealStatuses.Done;
+		DealStatusChange(msg.sender,_dealid,DealStatuses.Done,_metadata);
+
 	}
 
 }
