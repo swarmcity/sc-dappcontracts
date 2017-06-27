@@ -99,7 +99,7 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 
 	}
 
-	function fundDeal(string _dealid, address _dealowner,string _metadata){
+	function fundDeal(string _dealid, address _dealowner, string _metadata){
 		
 		bytes32 key = sha3(_dealowner,_dealid);
 		
