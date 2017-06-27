@@ -458,5 +458,153 @@ contract('DealForTwo', function(accounts) {
     });
   });
 
+  describe('DealForTwo cancel deal flow', function() {
+
+    it("should give seeker allowance to dealfortwo", function (done) {
+      swtToken.approve(dealForTwoFactory.address, 10, {
+        from: accounts[1]
+      }).then(function (res) {
+        console.log('gas used:', res.receipt.gasUsed);
+        gasStats.push({
+          name: 'approve (seeker)',
+          gasUsed: res.receipt.gasUsed
+        });
+        done();
+      });
+    });
+
+    it("should create a new deal", function (done) {
+      var watcher = dealForTwoFactory.NewDealForTwo();
+      dealForTwoFactory.makeDealForTwo("TheDeal6", 10, "some hash", {
+        from: accounts[1],
+        gas: 4700000
+      }).then(function (res) {
+        console.log('gas used:', res.receipt.gasUsed);
+        gasStats.push({
+          name: 'makeDealForTwo',
+          gasUsed: res.receipt.gasUsed
+        });
+        return watcher.get();
+      }).then(function (events) {
+        // now we'll check that the events are correct
+        assert.equal(events.length, 1);
+        assert.equal(events[0].args.dealid.valueOf(), "TheDeal6", "NewDealForTwo event dealid doesn't match input");
+        assert.equal(events[0].args.owner.valueOf(), accounts[1], "NewDealForTwo event owner doesn't match input");
+        assert.equal(events[0].args.metadata.valueOf(), "some hash", "NewDealForTwo event metadata doesn't match input");
+      }).then(done);
+    });
+
+    it("should cancel deal before provider is assigned", function (done) {
+      var watcher = dealForTwoFactory.DealStatusChange();
+      dealForTwoFactory.cancelDeal("TheDeal6", "final hash", {
+        from: accounts[1],
+        gas: 4700000
+      }).then(function (res) {
+        return watcher.get();
+      }).then(function (events) {
+        assert.equal(events.length, 1);
+        assert.equal(events[0].args.dealid.valueOf(), "TheDeal6", "DealStatusChange event dealid doesn't match input");
+        assert.equal(events[0].args.owner.valueOf(), accounts[1], "DealStatusChange event owner doesn't match input");
+        assert.equal(events[0].args.metadata.valueOf(), "final hash", "DealStatusChange event metadata doesn't match input");
+        assert.equal(events[0].args.newstatus.valueOf(), 4, "DealStatusChange event newstatus is not closed");
+      }).then(done);
+    });
+  });
+
+  describe('DealForTwo cancel deal invalid flow', function() {
+
+    it("should give seeker allowance to dealfortwo", function (done) {
+      swtToken.approve(dealForTwoFactory.address, 10, {
+        from: accounts[1]
+      }).then(function (res) {
+        console.log('gas used:', res.receipt.gasUsed);
+        gasStats.push({
+          name: 'approve (seeker)',
+          gasUsed: res.receipt.gasUsed
+        });
+        done();
+      });
+    });
+
+    it("should create a new deal", function (done) {
+      var watcher = dealForTwoFactory.NewDealForTwo();
+      dealForTwoFactory.makeDealForTwo("TheDeal7", 10, "some hash", {
+        from: accounts[1],
+        gas: 4700000
+      }).then(function (res) {
+        console.log('gas used:', res.receipt.gasUsed);
+        gasStats.push({
+          name: 'makeDealForTwo',
+          gasUsed: res.receipt.gasUsed
+        });
+        return watcher.get();
+      }).then(function (events) {
+        // now we'll check that the events are correct
+        assert.equal(events.length, 1);
+        assert.equal(events[0].args.dealid.valueOf(), "TheDeal7", "NewDealForTwo event dealid doesn't match input");
+        assert.equal(events[0].args.owner.valueOf(), accounts[1], "NewDealForTwo event owner doesn't match input");
+        assert.equal(events[0].args.metadata.valueOf(), "some hash", "NewDealForTwo event metadata doesn't match input");
+      }).then(done);
+    });
+
+    it("should do nothing if non owner calls cancel deal", function(done) {
+      var watcher = dealForTwoFactory.DealStatusChange();
+      dealForTwoFactory.cancelDeal("TheDeal6", "final hash", {
+        from: accounts[2],
+        gas: 4700000
+      }).then(function (res) {
+        return watcher.get();
+      }).then(function (events) {
+        assert.equal(events.length, 0);
+      }).then(done);
+    });
+
+    it("should give provider allowance to dealfortwo", function(done) {
+      swtToken.approve(dealForTwoFactory.address, 10, {
+        from: accounts[2]
+      }).then(function(res) {
+        done();
+      });
+    });
+
+
+    it("should execute fundDeal", function(done) {
+      var watcher = dealForTwoFactory.FundDeal();
+      dealForTwoFactory.fundDeal("TheDeal7", accounts[1], "updated hash", {
+        from: accounts[2],
+        gas: 4700000
+      }).then(() => watcher.get()
+      ).then(function(events) {
+        assert.equal(events.length, 1);
+        assert.equal(events[0].args.dealid.valueOf(), "TheDeal7", "FundDeal event dealid doesn't match input");
+        assert.equal(events[0].args.owner.valueOf(), accounts[1], "FundDeal event owner doesn't match input");
+        assert.equal(events[0].args.metadata.valueOf(), "updated hash", "FundDeal event metadata doesn't match input");
+        assert.equal(events[0].args.provider.valueOf(), accounts[2], "FundDeal event metadata doesn't match input");
+      }).then(done);
+    });
+
+    it("cancelDeal should do nothing if provider already assigned", function(done) {
+      var watcher = dealForTwoFactory.DealStatusChange();
+      dealForTwoFactory.cancelDeal("TheDeal7", "final hash", {
+        from: accounts[1],
+        gas: 4700000
+      }).then(function (res) {
+        return watcher.get();
+      }).then(function (events) {
+        assert.equal(events.length, 0);
+      }).then(done);
+    });
+
+    it("dealstatus should still be open", function(done) {
+      dealForTwoFactory.readDeal.call("TheDeal7", accounts[1])
+        .then(function (res) {
+          assert.equal(res[0], 0, "deal status should be open");
+          assert.equal(res[1], hashtagcommission, "deal commission is incorrect");
+          assert.equal(res[2], 10, "deal value is incorrect");
+          assert.equal(res[3], accounts[2], "deal provider is incorrect");
+          done();
+        })
+      });
+  });
 
 });
