@@ -48,7 +48,7 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 
 	function cancelDeal(string _dealid,string _metadata){
 		dealStruct d = deals[sha3(msg.sender,_dealid)];
-		if (d.dealValue > 0 && d.provider == 0x0)
+		if (d.dealValue > 0 && d.provider == 0x0 && d.status == DealStatuses.Open)
 		{
 			// cancel this Deal
 			if (!hashtagToken.transfer(msg.sender,d.dealValue)){ throw; }
