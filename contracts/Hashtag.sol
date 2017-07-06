@@ -37,8 +37,8 @@ contract Hashtag is Ownable {
 		metadataHash = _metadataHash;
 		commission = _commission;
 //		if (_indexMe) {
-//			address index = 
-//			index.call(bytes4(sha3("addMe(bool)")), true);
+//			address index = ; //Need to insert the address.
+//			index.call(bytes4(sha3("addMe(string, address)")), _name, _tokenfactory);
 //		}
 	}
 
