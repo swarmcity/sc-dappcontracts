@@ -148,7 +148,7 @@ contract('DealForTwo', function(accounts) {
     });
 
     it("should create a new deal", function(done) {
-      dealForTwoFactory.makeDealForTwo("TheDeal", 10, {
+      dealForTwoFactory.makeDealForTwo("TheDeal", 10,"", {
         from: accounts[1],
         gas: 4700000
       }).then(function(res) {
@@ -193,7 +193,7 @@ contract('DealForTwo', function(accounts) {
 
 
     it("should execute fundDeal", function(done) {
-      dealForTwoFactory.fundDeal("TheDeal", accounts[1], 10, {
+      dealForTwoFactory.fundDeal("TheDeal", accounts[1], 10,"", {
         from: accounts[2],
         gas: 4700000
       }).then(function(res) {
@@ -225,7 +225,7 @@ contract('DealForTwo', function(accounts) {
 
 
     it("should approve the deal", function(done) {
-      dealForTwoFactory.payout("TheDeal", {
+      dealForTwoFactory.payout("TheDeal","", {
         from: accounts[1],
         gas: 4700000
       }).then(function(res) {
@@ -265,7 +265,7 @@ contract('DealForTwo', function(accounts) {
 
     it("should see REP on accounts[1]", function(done) {
       hashtagRepToken.balanceOf(accounts[1]).then(function(balance) {
-        assert.equal(balance, 1, "accounts[1] REP balance not correct");
+        assert.equal(balance, 5, "accounts[1] REP balance not correct");
         console.log('Balance of account=', balance.toNumber());
         done();
       });
@@ -273,7 +273,7 @@ contract('DealForTwo', function(accounts) {
 
     it("should see REP on accounts[2]", function(done) {
       hashtagRepToken.balanceOf(accounts[2]).then(function(balance) {
-        assert.equal(balance, 1, "accounts[2] REP balance not correct");
+        assert.equal(balance, 5, "accounts[2] REP balance not correct");
         console.log('Balance of account=', balance.toNumber());
         done();
       });
@@ -348,7 +348,7 @@ contract('DealForTwo', function(accounts) {
     });
 
     it("create a new deal should work", function(done) {
-      dealForTwoFactory.makeDealForTwo("TheDeal4", 10, {
+      dealForTwoFactory.makeDealForTwo("TheDeal4", 10,"", {
         from: accounts[1],
         gas: 4700000
       }).then(function(res) {
@@ -360,7 +360,7 @@ contract('DealForTwo', function(accounts) {
     });
 
     it("fund an existing deal but wit no allowance should throw", function(done) {
-      dealForTwoFactory.fundDeal("TheDeal4", accounts[1], 10, {
+      dealForTwoFactory.fundDeal("TheDeal4", accounts[1], 10, "",{
         from: accounts[2],
         gas: 4700000
       }).then(function(res) {
@@ -372,7 +372,7 @@ contract('DealForTwo', function(accounts) {
     });
 
     it("payout a non-funded deal should throw", function(done) {
-      dealForTwoFactory.payout("TheDeal4", {
+      dealForTwoFactory.payout("TheDeal4","", {
         from: accounts[1],
         gas: 4700000
       }).then(function(res) {
@@ -401,7 +401,7 @@ contract('DealForTwo', function(accounts) {
     });
 
     it("create a new deal that could never cover the commission should throw", function(done) {
-      dealForTwoFactory.makeDealForTwo("TheDeal5", 10, {
+      dealForTwoFactory.makeDealForTwo("TheDeal5", 10, "",{
         from: accounts[1],
         gas: 4700000
       }).then(function(res) {
@@ -413,7 +413,7 @@ contract('DealForTwo', function(accounts) {
     });
 
     it("fund an existing deal but with no allowance should throw", function(done) {
-      dealForTwoFactory.fundDeal("TheDeal4", accounts[1], 10, {
+      dealForTwoFactory.fundDeal("TheDeal4", accounts[1], 10, "",{
         from: accounts[2],
         gas: 4700000
       }).then(function(res) {
@@ -425,7 +425,7 @@ contract('DealForTwo', function(accounts) {
     });
 
     it("payout a non-funded deal should throw", function(done) {
-      dealForTwoFactory.payout("TheDeal4", {
+      dealForTwoFactory.payout("TheDeal4","", {
         from: accounts[1],
         gas: 4700000
       }).then(function(res) {
