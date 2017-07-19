@@ -1,0 +1,15 @@
+{
+  "package_name": "swarmcity",
+  "version": "0.0.2-pre",
+  "description": "Swarm City",
+  "authors": [
+    "sponnet",
+    "kingflurkel"
+  ],
+  "keywords": [
+    "SwarmCity"
+  ],
+  "dependencies": {
+  },
+  "license": "MIT"
+}
