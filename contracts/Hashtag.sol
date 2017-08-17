@@ -2,6 +2,7 @@ pragma solidity ^0.4.8;
 
 import '../installed_contracts/zeppelin/contracts/ownership/Ownable.sol';
 import './MiniMeToken.sol';
+import './Index.sol';
 
 contract Hashtag is Ownable {
 	
@@ -20,7 +21,7 @@ contract Hashtag is Ownable {
 	event DealRegistered(address dealContract);
 	event RepAdded(address to,uint amount);
 
-	function Hashtag(address _token, address _tokenfactory, string _name,uint _commission,string _metadataHash){
+	function Hashtag(address _token, address _tokenfactory, string _name, uint _commission, string _metadataHash, bool _indexMe) {
 		name = _name;
 //		MiniMeTokenFactory f = new MiniMeTokenFactory(); 
 		rep = new MiniMeToken(
@@ -35,6 +36,10 @@ contract Hashtag is Ownable {
 		token = MiniMeToken(_token);
 		metadataHash = _metadataHash;
 		commission = _commission;
+//		if (_indexMe) {
+//			address index = ; //Need to insert the address.
+//			index.call(bytes4(sha3("addMe(string, address)")), _name, _tokenfactory);
+//		}
 	}
 
 	

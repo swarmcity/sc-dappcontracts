@@ -1,5 +1,9 @@
 # Swarm City Dapp
 
+## Index.sol
+
+List of hashtags, their names, and their factory. Should not be deployed unless you want your own index.
+
 ## Parameters.sol
 
 Manages blockchain-approved parameters for a DApp
