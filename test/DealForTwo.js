@@ -148,7 +148,8 @@ contract('DealForTwo', function(accounts) {
     });
 
     it("should create a new deal", function(done) {
-      dealForTwoFactory.makeDealForTwo("TheDeal", 10, {
+      var watcher = dealForTwoFactory.NewDealForTwo();
+      dealForTwoFactory.makeDealForTwo("TheDeal", 10, "some hash", {
         from: accounts[1],
         gas: 4700000
       }).then(function(res) {
@@ -157,8 +158,14 @@ contract('DealForTwo', function(accounts) {
           name: 'makeDealForTwo',
           gasUsed: res.receipt.gasUsed
         });
-        done();
-      });
+        return watcher.get();
+      }).then(function(events) {
+        // now we'll check that the events are correct
+        assert.equal(events.length, 1);
+        assert.equal(events[0].args.dealid.valueOf(), "TheDeal", "NewDealForTwo event dealid doesn't match input");
+        assert.equal(events[0].args.owner.valueOf(), accounts[1], "NewDealForTwo event owner doesn't match input");
+        assert.equal(events[0].args.metadata.valueOf(), "some hash", "NewDealForTwo event metadata doesn't match input");
+      }).then(done);
     });
 
     it("should see token balance decreased on seeker's account", function(done) {
@@ -193,7 +200,8 @@ contract('DealForTwo', function(accounts) {
 
 
     it("should execute fundDeal", function(done) {
-      dealForTwoFactory.fundDeal("TheDeal", accounts[1], 10, {
+      var watcher = dealForTwoFactory.FundDeal();
+      dealForTwoFactory.fundDeal("TheDeal", accounts[1], "updated hash", {
         from: accounts[2],
         gas: 4700000
       }).then(function(res) {
@@ -202,8 +210,14 @@ contract('DealForTwo', function(accounts) {
           name: 'fundDeal',
           gasUsed: res.receipt.gasUsed
         });
-        done();
-      });
+        return watcher.get();
+      }).then(function(events) {
+        assert.equal(events.length, 1);
+        assert.equal(events[0].args.dealid.valueOf(), "TheDeal", "FundDeal event dealid doesn't match input");
+        assert.equal(events[0].args.owner.valueOf(), accounts[1], "FundDeal event owner doesn't match input");
+        assert.equal(events[0].args.metadata.valueOf(), "updated hash", "FundDeal event metadata doesn't match input");
+        assert.equal(events[0].args.provider.valueOf(), accounts[2], "FundDeal event metadata doesn't match input");
+      }).then(done);
     });
 
 
@@ -225,7 +239,8 @@ contract('DealForTwo', function(accounts) {
 
 
     it("should approve the deal", function(done) {
-      dealForTwoFactory.payout("TheDeal", {
+      var watcher = dealForTwoFactory.DealStatusChange();
+      dealForTwoFactory.payout("TheDeal", "final hash", {
         from: accounts[1],
         gas: 4700000
       }).then(function(res) {
@@ -234,8 +249,14 @@ contract('DealForTwo', function(accounts) {
           name: 'payout',
           gasUsed: res.receipt.gasUsed
         });
-        done();
-      });
+        return watcher.get();
+      }).then(function(events) {
+        assert.equal(events.length, 1);
+        assert.equal(events[0].args.dealid.valueOf(), "TheDeal", "DealStatusChange event dealid doesn't match input");
+        assert.equal(events[0].args.owner.valueOf(), accounts[1], "DealStatusChange event owner doesn't match input");
+        assert.equal(events[0].args.metadata.valueOf(), "final hash", "DealStatusChange event metadata doesn't match input");
+        assert.equal(events[0].args.newstatus.valueOf(), 1, "DealStatusChange event newstatus is not closed");
+      }).then(done);
     });
 
 
@@ -265,7 +286,7 @@ contract('DealForTwo', function(accounts) {
 
     it("should see REP on accounts[1]", function(done) {
       hashtagRepToken.balanceOf(accounts[1]).then(function(balance) {
-        assert.equal(balance, 1, "accounts[1] REP balance not correct");
+        assert.equal(balance, 5, "accounts[1] REP balance not correct");
         console.log('Balance of account=', balance.toNumber());
         done();
       });
@@ -273,7 +294,7 @@ contract('DealForTwo', function(accounts) {
 
     it("should see REP on accounts[2]", function(done) {
       hashtagRepToken.balanceOf(accounts[2]).then(function(balance) {
-        assert.equal(balance, 1, "accounts[2] REP balance not correct");
+        assert.equal(balance, 5, "accounts[2] REP balance not correct");
         console.log('Balance of account=', balance.toNumber());
         done();
       });
@@ -295,7 +316,7 @@ contract('DealForTwo', function(accounts) {
   describe('DealForTwo that doesn\'t exist error-logic', function() {
 
     it("create a new deal without an allowance should throw", function(done) {
-      dealForTwoFactory.makeDealForTwo("TheDeal2", 10, {
+      dealForTwoFactory.makeDealForTwo("TheDeal2", 10, "some hash", {
         from: accounts[1],
         gas: 4700000
       }).then(function(res) {
@@ -307,7 +328,7 @@ contract('DealForTwo', function(accounts) {
     });
 
     it("approve a non-existing deal should throw", function(done) {
-      dealForTwoFactory.fundDeal("TheDeal3", accounts[1], 10, {
+      dealForTwoFactory.fundDeal("TheDeal3", accounts[1], 10, "updated hash", {
         from: accounts[2],
         gas: 4700000
       }).then(function(res) {
@@ -319,7 +340,7 @@ contract('DealForTwo', function(accounts) {
     });
 
     it("payout a non-existing deal should throw", function(done) {
-      dealForTwoFactory.payout("TheDeal3", {
+      dealForTwoFactory.payout("TheDeal3", "final hash", {
         from: accounts[1],
         gas: 4700000
       }).then(function(res) {
@@ -348,7 +369,7 @@ contract('DealForTwo', function(accounts) {
     });
 
     it("create a new deal should work", function(done) {
-      dealForTwoFactory.makeDealForTwo("TheDeal4", 10, {
+      dealForTwoFactory.makeDealForTwo("TheDeal4", 10, "some hash", {
         from: accounts[1],
         gas: 4700000
       }).then(function(res) {
@@ -360,7 +381,7 @@ contract('DealForTwo', function(accounts) {
     });
 
     it("fund an existing deal but wit no allowance should throw", function(done) {
-      dealForTwoFactory.fundDeal("TheDeal4", accounts[1], 10, {
+      dealForTwoFactory.fundDeal("TheDeal4", accounts[1], 10, "updated hash", {
         from: accounts[2],
         gas: 4700000
       }).then(function(res) {
@@ -372,7 +393,7 @@ contract('DealForTwo', function(accounts) {
     });
 
     it("payout a non-funded deal should throw", function(done) {
-      dealForTwoFactory.payout("TheDeal4", {
+      dealForTwoFactory.payout("TheDeal4", "final hash", {
         from: accounts[1],
         gas: 4700000
       }).then(function(res) {
@@ -401,7 +422,7 @@ contract('DealForTwo', function(accounts) {
     });
 
     it("create a new deal that could never cover the commission should throw", function(done) {
-      dealForTwoFactory.makeDealForTwo("TheDeal5", 10, {
+      dealForTwoFactory.makeDealForTwo("TheDeal5", 10, "some hash", {
         from: accounts[1],
         gas: 4700000
       }).then(function(res) {
@@ -413,7 +434,7 @@ contract('DealForTwo', function(accounts) {
     });
 
     it("fund an existing deal but with no allowance should throw", function(done) {
-      dealForTwoFactory.fundDeal("TheDeal4", accounts[1], 10, {
+      dealForTwoFactory.fundDeal("TheDeal4", accounts[1], 10, "updated hash", {
         from: accounts[2],
         gas: 4700000
       }).then(function(res) {
@@ -425,7 +446,7 @@ contract('DealForTwo', function(accounts) {
     });
 
     it("payout a non-funded deal should throw", function(done) {
-      dealForTwoFactory.payout("TheDeal4", {
+      dealForTwoFactory.payout("TheDeal4", "final hash", {
         from: accounts[1],
         gas: 4700000
       }).then(function(res) {
@@ -437,5 +458,153 @@ contract('DealForTwo', function(accounts) {
     });
   });
 
+  describe('DealForTwo cancel deal flow', function() {
+
+    it("should give seeker allowance to dealfortwo", function (done) {
+      swtToken.approve(dealForTwoFactory.address, 10, {
+        from: accounts[1]
+      }).then(function (res) {
+        console.log('gas used:', res.receipt.gasUsed);
+        gasStats.push({
+          name: 'approve (seeker)',
+          gasUsed: res.receipt.gasUsed
+        });
+        done();
+      });
+    });
+
+    it("should create a new deal", function (done) {
+      var watcher = dealForTwoFactory.NewDealForTwo();
+      dealForTwoFactory.makeDealForTwo("TheDeal6", 10, "some hash", {
+        from: accounts[1],
+        gas: 4700000
+      }).then(function (res) {
+        console.log('gas used:', res.receipt.gasUsed);
+        gasStats.push({
+          name: 'makeDealForTwo',
+          gasUsed: res.receipt.gasUsed
+        });
+        return watcher.get();
+      }).then(function (events) {
+        // now we'll check that the events are correct
+        assert.equal(events.length, 1);
+        assert.equal(events[0].args.dealid.valueOf(), "TheDeal6", "NewDealForTwo event dealid doesn't match input");
+        assert.equal(events[0].args.owner.valueOf(), accounts[1], "NewDealForTwo event owner doesn't match input");
+        assert.equal(events[0].args.metadata.valueOf(), "some hash", "NewDealForTwo event metadata doesn't match input");
+      }).then(done);
+    });
+
+    it("should cancel deal before provider is assigned", function (done) {
+      var watcher = dealForTwoFactory.DealStatusChange();
+      dealForTwoFactory.cancelDeal("TheDeal6", "final hash", {
+        from: accounts[1],
+        gas: 4700000
+      }).then(function (res) {
+        return watcher.get();
+      }).then(function (events) {
+        assert.equal(events.length, 1);
+        assert.equal(events[0].args.dealid.valueOf(), "TheDeal6", "DealStatusChange event dealid doesn't match input");
+        assert.equal(events[0].args.owner.valueOf(), accounts[1], "DealStatusChange event owner doesn't match input");
+        assert.equal(events[0].args.metadata.valueOf(), "final hash", "DealStatusChange event metadata doesn't match input");
+        assert.equal(events[0].args.newstatus.valueOf(), 4, "DealStatusChange event newstatus is not closed");
+      }).then(done);
+    });
+  });
+
+  describe('DealForTwo cancel deal invalid flow', function() {
+
+    it("should give seeker allowance to dealfortwo", function (done) {
+      swtToken.approve(dealForTwoFactory.address, 10, {
+        from: accounts[1]
+      }).then(function (res) {
+        console.log('gas used:', res.receipt.gasUsed);
+        gasStats.push({
+          name: 'approve (seeker)',
+          gasUsed: res.receipt.gasUsed
+        });
+        done();
+      });
+    });
+
+    it("should create a new deal", function (done) {
+      var watcher = dealForTwoFactory.NewDealForTwo();
+      dealForTwoFactory.makeDealForTwo("TheDeal7", 10, "some hash", {
+        from: accounts[1],
+        gas: 4700000
+      }).then(function (res) {
+        console.log('gas used:', res.receipt.gasUsed);
+        gasStats.push({
+          name: 'makeDealForTwo',
+          gasUsed: res.receipt.gasUsed
+        });
+        return watcher.get();
+      }).then(function (events) {
+        // now we'll check that the events are correct
+        assert.equal(events.length, 1);
+        assert.equal(events[0].args.dealid.valueOf(), "TheDeal7", "NewDealForTwo event dealid doesn't match input");
+        assert.equal(events[0].args.owner.valueOf(), accounts[1], "NewDealForTwo event owner doesn't match input");
+        assert.equal(events[0].args.metadata.valueOf(), "some hash", "NewDealForTwo event metadata doesn't match input");
+      }).then(done);
+    });
+
+    it("should do nothing if non owner calls cancel deal", function(done) {
+      var watcher = dealForTwoFactory.DealStatusChange();
+      dealForTwoFactory.cancelDeal("TheDeal6", "final hash", {
+        from: accounts[2],
+        gas: 4700000
+      }).then(function (res) {
+        return watcher.get();
+      }).then(function (events) {
+        assert.equal(events.length, 0);
+      }).then(done);
+    });
+
+    it("should give provider allowance to dealfortwo", function(done) {
+      swtToken.approve(dealForTwoFactory.address, 10, {
+        from: accounts[2]
+      }).then(function(res) {
+        done();
+      });
+    });
+
+
+    it("should execute fundDeal", function(done) {
+      var watcher = dealForTwoFactory.FundDeal();
+      dealForTwoFactory.fundDeal("TheDeal7", accounts[1], "updated hash", {
+        from: accounts[2],
+        gas: 4700000
+      }).then(() => watcher.get()
+      ).then(function(events) {
+        assert.equal(events.length, 1);
+        assert.equal(events[0].args.dealid.valueOf(), "TheDeal7", "FundDeal event dealid doesn't match input");
+        assert.equal(events[0].args.owner.valueOf(), accounts[1], "FundDeal event owner doesn't match input");
+        assert.equal(events[0].args.metadata.valueOf(), "updated hash", "FundDeal event metadata doesn't match input");
+        assert.equal(events[0].args.provider.valueOf(), accounts[2], "FundDeal event metadata doesn't match input");
+      }).then(done);
+    });
+
+    it("cancelDeal should do nothing if provider already assigned", function(done) {
+      var watcher = dealForTwoFactory.DealStatusChange();
+      dealForTwoFactory.cancelDeal("TheDeal7", "final hash", {
+        from: accounts[1],
+        gas: 4700000
+      }).then(function (res) {
+        return watcher.get();
+      }).then(function (events) {
+        assert.equal(events.length, 0);
+      }).then(done);
+    });
+
+    it("dealstatus should still be open", function(done) {
+      dealForTwoFactory.readDeal.call("TheDeal7", accounts[1])
+        .then(function (res) {
+          assert.equal(res[0], 0, "deal status should be open");
+          assert.equal(res[1], hashtagcommission, "deal commission is incorrect");
+          assert.equal(res[2], 10, "deal value is incorrect");
+          assert.equal(res[3], accounts[2], "deal provider is incorrect");
+          done();
+        })
+      });
+  });
 
 });

@@ -99,7 +99,7 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 
 	}
 
-	function fundDeal(string _dealid, address _dealowner,string _metadata){
+	function fundDeal(string _dealid, address _dealowner, string _metadata){
 		
 		bytes32 key = sha3(_dealowner,_dealid);
 		
@@ -121,7 +121,7 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 		FundDeal(msg.sender,_dealowner,_dealid,_metadata);
 	}
 
-	function readDeal(string _dealid, address _dealowner) returns(DealStatuses status, uint commissionValue, uint dealValue, address provider){
+	function readDeal(string _dealid, address _dealowner) constant returns(DealStatuses status, uint commissionValue, uint dealValue, address provider){
 		bytes32 key = sha3(_dealowner,_dealid);
 		return (deals[key].status,deals[key].commissionValue,deals[key].dealValue,deals[key].provider);
 	}
