@@ -1,3 +1,6 @@
+
+// [KF] should we remove this from our repo?
+
 pragma solidity ^0.4.8;
 
 import '../installed_contracts/zeppelin/contracts/ownership/Ownable.sol';

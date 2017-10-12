@@ -25,6 +25,7 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 	function DealForTwoFactory(IHashtag _hashtag){
 		hashtag = _hashtag;
 		hashtagToken = IMiniMeToken(_hashtag.getTokenAddress());
+		// [KF] get both token addresses (requester + provider)
 	}
 
 	function makeDealForTwo(string _dealid, uint _offerValue, string _metadata){
@@ -81,7 +82,7 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 	// conflict resolver can resolve a disputed deal
 	function resolve(string _dealid, address _dealowner, uint _seekerFraction, string _metadata){
 		dealStruct d = deals[sha3(_dealowner,_dealid)];
-		
+
 		// this function can only be called by the current conflict resolver of the hastag
 		if (msg.sender != hashtag.getConflictResolver()){ throw; }
 
@@ -100,9 +101,9 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 	}
 
 	function fundDeal(string _dealid, address _dealowner,string _metadata){
-		
+
 		bytes32 key = sha3(_dealowner,_dealid);
-		
+
 		dealStruct d = deals[key];
 
 		// if the provider is filled in - the deal was already funded
@@ -131,7 +132,7 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 		bytes32 key = sha3(msg.sender,_dealid);
 
 		dealStruct d = deals[key];
-		
+
 		// you can only payout open deals
 		if (d.status != DealStatuses.Open){ throw; }
 
@@ -142,6 +143,7 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 		if (!hashtagToken.transfer(d.provider,d.dealValue * 2 - d.commissionValue)){ throw; }
 
 		// mint REP for both parties
+		// [KF] change this to requester and provider rep
 		hashtag.mintRep(d.provider,5);
 		hashtag.mintRep(msg.sender,5);
 
@@ -152,4 +154,3 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 	}
 
 }
-
