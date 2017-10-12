@@ -4,7 +4,7 @@ import '../installed_contracts/zeppelin/contracts/ownership/Ownable.sol';
 import './MiniMeToken.sol';
 
 contract Hashtag is Ownable {
-	
+
 	string public name;
 	uint public registeredDeals;
 	uint public successfulDeals;
@@ -13,16 +13,22 @@ contract Hashtag is Ownable {
 	uint public commission;
 
 	MiniMeToken token;	// the token this hashtagcontract uses
+	// [KF] Add MiniMeToken requesterrep
+	// [KF] Add MiniMeToken providerrep
 	MiniMeToken rep;	// the reputation token ( clonable )
 
 	string public metadataHash;	// IPFS hash to metadata of this Hashtag
 
 	event DealRegistered(address dealContract);
 	event RepAdded(address to,uint amount);
+	// [KF] add event ProviderRepAdded
+	// [KF] add event RequesterRepAdded
 
 	function Hashtag(address _token, address _tokenfactory, string _name,uint _commission,string _metadataHash){
+
+		// // [KF] create two rep tokens here, one for provider, one for requester
 		name = _name;
-//		MiniMeTokenFactory f = new MiniMeTokenFactory(); 
+//		MiniMeTokenFactory f = new MiniMeTokenFactory();
 		rep = new MiniMeToken(
 			_tokenfactory,
 			0,
@@ -37,7 +43,7 @@ contract Hashtag is Ownable {
 		commission = _commission;
 	}
 
-	
+
 	function setMetadataHash(string _metadataHash) onlyOwner {
 		metadataHash = _metadataHash;
 	}
@@ -59,6 +65,7 @@ contract Hashtag is Ownable {
 	// }
 
 	function getRepTokenAddress()returns(address){
+		// Duplicate this for the second Rep token
 		return address(rep);
 	}
 
@@ -87,6 +94,7 @@ contract Hashtag is Ownable {
 	}
 
 	function mintRep(address _receiver,uint _amount) {
+		// // [KF] mint requester rep or mint provider rep
 		// Only valid DealFactory contracts can mint rep ?
 		if (validFactories[msg.sender] != true){
 			throw;
@@ -94,6 +102,6 @@ contract Hashtag is Ownable {
 
 		rep.generateTokens(_receiver,_amount);
 		RepAdded(_receiver,_amount);
-	} 
+	}
 
 }

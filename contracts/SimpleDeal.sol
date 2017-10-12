@@ -15,6 +15,7 @@ contract SimpleDeal is Ownable, SafeMath {
 
 	IHashtag hashtag;
 	IMiniMeToken hashtagToken;
+	// [KF] Add second rep token providerrep and requesterrep
 
 	event Claimed();
 	event Approved();
@@ -38,17 +39,18 @@ contract SimpleDeal is Ownable, SafeMath {
 		dealStatus = DealStatuses.Open;
 		hashtag = IHashtag(_hashtag);
 		hashtagToken = IMiniMeToken(hashtag.getTokenAddress());
+		// [KF] Add second rep token
 		hashtagCommission = hashtag.commission();
 
 		// now change ownership to the actual owner given by the factory.
-		transferOwnership(_owner);		
+		transferOwnership(_owner);
 	}
 
 	function cancel() onlyOwner {
 		if (dealStatus != DealStatuses.Open && dealStatus != DealStatuses.OwnerFunded){
 			throw;
 		}
-		if (!hashtagToken.transfer(owner,hashtagToken.balanceOf(this))){ throw; }		
+		if (!hashtagToken.transfer(owner,hashtagToken.balanceOf(this))){ throw; }
 		dealStatus = DealStatuses.Canceled;
 	}
 
@@ -107,6 +109,7 @@ contract SimpleDeal is Ownable, SafeMath {
 		}
 
 		// award some REP
+		// [KF] Mint requesterrep for requester, mint providerrep for provider
 		hashtag.mintRep(owner,1);
 		hashtag.mintRep(counterparty,1);
 
