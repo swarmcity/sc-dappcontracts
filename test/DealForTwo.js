@@ -1,13 +1,14 @@
 var MiniMeTokenFactory = artifacts.require("./MiniMeToken.sol");
 var MiniMeToken = artifacts.require("./MiniMeToken.sol");
 var Hashtag = artifacts.require("./Hashtag.sol");
-var DealForTwo = artifacts.require("./DealForTwo.sol");
+//var DealForTwo = artifacts.require("./DealForTwo.sol");
 var DealForTwoFactory = artifacts.require("./DealForTwoFactory.sol");
 
 contract('DealForTwo', function(accounts) {
 
   var swtToken;
-  var hashtagRepToken;
+  var hashtagProviderRepToken;
+  var hashtagSeekerRepToken;
   var miniMeTokenFactory;
   var hashtagContract;
   var dealContract;
@@ -45,18 +46,33 @@ contract('DealForTwo', function(accounts) {
       });
     });
 
-    it("should mint tokens for accounts[1] ( seeker ) ", function(done) {
+    it("should mint SWT tokens for accounts[1] ( seeker ) ", function(done) {
       swtToken.generateTokens(accounts[1], 100).then(function() {
         done();
       });
     });
 
-    it("should mint tokens for accounts[2] ( provider ) ", function(done) {
+    it("should see token balance seeker's account", function(done) {
+      swtToken.balanceOf(accounts[1]).then(function(balance) {
+        assert.equal(balance.toNumber(), 100, "seeker balance not correct after swt minting");
+        console.log('Balance of accounts[1] =', balance.toNumber());
+        done();
+      });
+    });
+
+    it("should mint SWT tokens for accounts[2] ( provider ) ", function(done) {
       swtToken.generateTokens(accounts[2], 300).then(function() {
         done();
       });
     });
 
+    it("should see token balance providers account", function(done) {
+      swtToken.balanceOf(accounts[2]).then(function(balance) {
+        assert.equal(balance.toNumber(), 300, "provider balance not correct after swt minting");
+        console.log('Balance of accounts[2] =', balance.toNumber());
+        done();
+      });
+    });
   });
 
   describe('Hashtag and DealFactory creation flow', function() {
@@ -70,11 +86,19 @@ contract('DealForTwo', function(accounts) {
         hashtagContract = instance;
         assert.isNotNull(hashtagContract);
 
-        hashtagContract.getRepTokenAddress.call().then(function(reptokenaddress) {
-          console.log('hashtag REP token created at address', reptokenaddress);
-          hashtagRepToken = MiniMeToken.at(reptokenaddress);
-          done();
+        hashtagContract.getProviderRepTokenAddress.call().then(function(tokenaddress) {
+          console.log('hashtag provider REP token created at address', tokenaddress);
+          hashtagProviderRepToken = MiniMeToken.at(tokenaddress);
+
+          hashtagContract.getSeekerRepTokenAddress.call().then(function(tokenaddress) {
+            console.log('hashtag seeker REP token created at address', tokenaddress);
+            hashtagSeekerRepToken = MiniMeToken.at(tokenaddress);
+            done();
+          });
+
         });
+
+
       });
     });
 
@@ -86,16 +110,16 @@ contract('DealForTwo', function(accounts) {
     });
 
     it("should see no REP on accounts[1]", function(done) {
-      hashtagRepToken.balanceOf(accounts[1]).then(function(balance) {
-        assert.equal(balance, 0, "accounts[1] REP balance not correct");
+      hashtagProviderRepToken.balanceOf(accounts[1]).then(function(balance) {
+        assert.equal(balance, 0, "accounts[1] provider REP balance not correct");
         console.log('Balance of account=', balance.toNumber());
         done();
       });
     });
 
     it("should see no REP on accounts[2]", function(done) {
-      hashtagRepToken.balanceOf(accounts[2]).then(function(balance) {
-        assert.equal(balance, 0, "accounts[1] REP balance not correct");
+      hashtagSeekerRepToken.balanceOf(accounts[2]).then(function(balance) {
+        assert.equal(balance, 0, "accounts[1] seeker REP balance not correct");
         console.log('Balance of account=', balance.toNumber());
         done();
       });
@@ -148,7 +172,7 @@ contract('DealForTwo', function(accounts) {
     });
 
     it("should create a new deal", function(done) {
-      dealForTwoFactory.makeDealForTwo("TheDeal", 10,"", {
+      dealForTwoFactory.makeDealForTwo("TheDeal", 10, "", {
         from: accounts[1],
         gas: 4700000
       }).then(function(res) {
@@ -193,7 +217,7 @@ contract('DealForTwo', function(accounts) {
 
 
     it("should execute fundDeal", function(done) {
-      dealForTwoFactory.fundDeal("TheDeal", accounts[1], 10,"", {
+      dealForTwoFactory.fundDeal("TheDeal", accounts[1], "", {
         from: accounts[2],
         gas: 4700000
       }).then(function(res) {
@@ -210,7 +234,7 @@ contract('DealForTwo', function(accounts) {
     it("should see token balance decreased on provider's account", function(done) {
       swtToken.balanceOf(accounts[2]).then(function(balance) {
         assert.equal(balance.toNumber(), 290, "deal balance not correct after funding");
-        console.log('Balance of accounts[2] =', balance.toNumber());
+        console.log('Balance of provider account =', balance.toNumber());
         done();
       });
     });
@@ -225,7 +249,7 @@ contract('DealForTwo', function(accounts) {
 
 
     it("should approve the deal", function(done) {
-      dealForTwoFactory.payout("TheDeal","", {
+      dealForTwoFactory.payout("TheDeal", "", {
         from: accounts[1],
         gas: 4700000
       }).then(function(res) {
@@ -242,7 +266,7 @@ contract('DealForTwo', function(accounts) {
     it("should see the balance of the DealForTwoFactory is correct", function(done) {
       swtToken.balanceOf(dealForTwoFactory.address).then(function(balance) {
         assert.equal(balance.toNumber(), 0, " balance not correct");
-        console.log('Balance of account=', balance.toNumber());
+        console.log('Balance of dealForTwoFactory =', balance.toNumber());
         done();
       });
     });
@@ -250,7 +274,7 @@ contract('DealForTwo', function(accounts) {
     it("should see the payout on the provider's account", function(done) {
       swtToken.balanceOf(accounts[2]).then(function(balance) {
         assert.equal(balance.toNumber(), 300 + 10 - 2, " balance not correct");
-        console.log('Balance of account=', balance.toNumber());
+        console.log('Balance of provider account =', balance.toNumber());
         done();
       });
     });
@@ -258,23 +282,23 @@ contract('DealForTwo', function(accounts) {
     it("should see the payout of the commision on the hashtag owner's account", function(done) {
       swtToken.balanceOf(accounts[3]).then(function(balance) {
         assert.equal(balance.toNumber(), 2, " balance not correct");
-        console.log('Balance of account=', balance.toNumber());
+        console.log('Balance of hashtag account =', balance.toNumber());
         done();
       });
     });
 
-    it("should see REP on accounts[1]", function(done) {
-      hashtagRepToken.balanceOf(accounts[1]).then(function(balance) {
-        assert.equal(balance, 5, "accounts[1] REP balance not correct");
-        console.log('Balance of account=', balance.toNumber());
+    it("should see Seeker REP on Seekers account ", function(done) {
+      hashtagSeekerRepToken.balanceOf(accounts[1]).then(function(balance) {
+        assert.equal(balance.toNumber(), 5, "seeker accounts seekerREP balance not correct");
+        console.log('SeekerRepBalance of seeker rep account=', balance.toNumber());
         done();
       });
     });
 
-    it("should see REP on accounts[2]", function(done) {
-      hashtagRepToken.balanceOf(accounts[2]).then(function(balance) {
-        assert.equal(balance, 5, "accounts[2] REP balance not correct");
-        console.log('Balance of account=', balance.toNumber());
+    it("should see ProviderREP on providers account ", function(done) {
+      hashtagProviderRepToken.balanceOf(accounts[2]).then(function(balance) {
+        assert.equal(balance.toNumber(), 5, "Provider  providerREP balance not correct");
+        console.log('ProviderRepBalance of provider account=', balance.toNumber());
         done();
       });
     });
@@ -348,7 +372,7 @@ contract('DealForTwo', function(accounts) {
     });
 
     it("create a new deal should work", function(done) {
-      dealForTwoFactory.makeDealForTwo("TheDeal4", 10,"", {
+      dealForTwoFactory.makeDealForTwo("TheDeal4", 10, "", {
         from: accounts[1],
         gas: 4700000
       }).then(function(res) {
@@ -360,7 +384,7 @@ contract('DealForTwo', function(accounts) {
     });
 
     it("fund an existing deal but wit no allowance should throw", function(done) {
-      dealForTwoFactory.fundDeal("TheDeal4", accounts[1], 10, "",{
+      dealForTwoFactory.fundDeal("TheDeal4", accounts[1], 10, "", {
         from: accounts[2],
         gas: 4700000
       }).then(function(res) {
@@ -372,7 +396,7 @@ contract('DealForTwo', function(accounts) {
     });
 
     it("payout a non-funded deal should throw", function(done) {
-      dealForTwoFactory.payout("TheDeal4","", {
+      dealForTwoFactory.payout("TheDeal4", "", {
         from: accounts[1],
         gas: 4700000
       }).then(function(res) {
@@ -401,7 +425,7 @@ contract('DealForTwo', function(accounts) {
     });
 
     it("create a new deal that could never cover the commission should throw", function(done) {
-      dealForTwoFactory.makeDealForTwo("TheDeal5", 10, "",{
+      dealForTwoFactory.makeDealForTwo("TheDeal5", 10, "", {
         from: accounts[1],
         gas: 4700000
       }).then(function(res) {
@@ -413,7 +437,7 @@ contract('DealForTwo', function(accounts) {
     });
 
     it("fund an existing deal but with no allowance should throw", function(done) {
-      dealForTwoFactory.fundDeal("TheDeal4", accounts[1], 10, "",{
+      dealForTwoFactory.fundDeal("TheDeal4", accounts[1], 10, "", {
         from: accounts[2],
         gas: 4700000
       }).then(function(res) {
@@ -425,7 +449,7 @@ contract('DealForTwo', function(accounts) {
     });
 
     it("payout a non-funded deal should throw", function(done) {
-      dealForTwoFactory.payout("TheDeal4","", {
+      dealForTwoFactory.payout("TheDeal4", "", {
         from: accounts[1],
         gas: 4700000
       }).then(function(res) {

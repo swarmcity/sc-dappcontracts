@@ -30,13 +30,13 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 	function makeDealForTwo(string _dealid, uint _offerValue, string _metadata){
 
 		// make sure there is enough to pay the commission later on
-		require (hashtag.commission() / 2 > _offerValue);
+		require (hashtag.commission() / 2 <= _offerValue);
 
 		// fund this deal
-		require (!hashtagToken.transferFrom(msg.sender,this,_offerValue));
+		require (hashtagToken.transferFrom(msg.sender,this,_offerValue));
 
 		// if deal already exists don't allow to overwrite it
-		require (deals[sha3(msg.sender,_dealid)].commissionValue != 0);
+		require (deals[sha3(msg.sender,_dealid)].commissionValue == 0);
 
 		// if it's funded - fill in the details
 		deals[sha3(msg.sender,_dealid)] = dealStruct(DealStatuses.Open,hashtag.commission(),_offerValue,0);
@@ -50,7 +50,7 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 		if (d.dealValue > 0 && d.provider == 0x0 && d.status == DealStatuses.Open)
 		{
 			// cancel this Deal
-			require (!hashtagToken.transfer(msg.sender,d.dealValue));
+			require (hashtagToken.transfer(msg.sender,d.dealValue));
 			deals[sha3(msg.sender,_dealid)].status = DealStatuses.Canceled;
 
 			DealStatusChange(msg.sender,_dealid,DealStatuses.Canceled,_metadata);
@@ -60,17 +60,17 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 	// seeker or provider can choose to dispute an ongoing deal
 	function dispute(string _dealid, address _dealowner,string _metadata){
 		dealStruct storage d = deals[sha3(_dealowner,_dealid)];
-		require (d.status != DealStatuses.Open);
+		require (d.status == DealStatuses.Open);
 
 		if (msg.sender == _dealowner){
 			// seeker goes in conflict
 
 			// can only be only when there is a provider
-			require (d.provider == 0x0 );
+			require (d.provider != 0x0 );
 
 		}else{
 			// if not the seeker, only the provider can go in conflict
-			require (d.provider != msg.sender);
+			require (d.provider == msg.sender);
 		}
 		// mark the deal as Disputed
 		deals[sha3(_dealowner,_dealid)].status = DealStatuses.Disputed;
@@ -82,16 +82,16 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 		dealStruct storage d = deals[sha3(_dealowner,_dealid)];
 		
 		// this function can only be called by the current conflict resolver of the hastag
-		require (msg.sender != hashtag.getConflictResolver());
+		require (msg.sender == hashtag.getConflictResolver());
 
 		// only disputed deals can be resolved
-		require (d.status != DealStatuses.Disputed) ;
+		require (d.status == DealStatuses.Disputed) ;
 
 		// send the seeker fraction back to the dealowner
-		require (!hashtagToken.transfer(_dealowner,_seekerFraction));
+		require (hashtagToken.transfer(_dealowner,_seekerFraction));
 
 		// send the remaining deal value back to the provider
-		require (!hashtagToken.transfer(d.provider,d.dealValue - _seekerFraction));
+		require (hashtagToken.transfer(d.provider,d.dealValue - _seekerFraction));
 
 		deals[sha3(_dealowner,_dealid)].status = DealStatuses.Resolved;
 		DealStatusChange(_dealowner,_dealid,DealStatuses.Resolved,_metadata);
@@ -104,13 +104,13 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 		
 		dealStruct storage d = deals[key];
                 // only allow open deals to be funded
-		require (d.status != DealStatuses.Open);
+		require (d.status == DealStatuses.Open);
 
 		// if the provider is filled in - the deal was already funded
-		require (d.provider != 0x0);
+		require (d.provider == 0x0);
 
 		// put the tokens from the provider on the deal
-		require (!hashtagToken.transferFrom(msg.sender,this,d.dealValue));
+		require (hashtagToken.transferFrom(msg.sender,this,d.dealValue));
 
 		// fill in the address of the provider ( to payout the deal later on )
 		deals[key].provider = msg.sender;
@@ -130,17 +130,17 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 		dealStruct storage d = deals[key];
 		
 		// you can only payout open deals
-		require (d.status != DealStatuses.Open);
+		require (d.status == DealStatuses.Open);
 
 		// pay out commission
-		require (!hashtagToken.transfer(hashtag.getConflictResolver(),d.commissionValue));
+		require (hashtagToken.transfer(hashtag.getConflictResolver(),d.commissionValue));
 
 		// pay out the provider
-		require (!hashtagToken.transfer(d.provider,d.dealValue * 2 - d.commissionValue));
+		require (hashtagToken.transfer(d.provider,d.dealValue * 2 - d.commissionValue));
 
 		// mint REP for both parties
 		hashtag.mintProviderRep(d.provider,5);
-		hashtag.mintRequesterRep(msg.sender,5);
+		hashtag.mintSeekerRep(msg.sender,5);
 
 		// mark the deal as done
 		deals[key].status = DealStatuses.Done;

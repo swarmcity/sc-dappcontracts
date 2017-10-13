@@ -15,14 +15,14 @@ contract Hashtag is Ownable {
 	MiniMeToken token;	// the token this hashtagcontract uses
 	
 	MiniMeToken ProviderRep;	// the provider reputation token ( clonable )
-	MiniMeToken RequesterRep;	// the requester reputation token ( clonable )
+	MiniMeToken SeekerRep;	// the Seeker reputation token ( clonable )
 
 
 	string public metadataHash;	// IPFS hash to metadata of this Hashtag
 
 	event DealRegistered(address dealContract);
 	event ProviderRepAdded(address to, uint amount);
-	event RequesterRepAdded(address to, uint amount);
+	event SeekerRepAdded(address to, uint amount);
 
 	function Hashtag(address _token, address _tokenfactory, string _name,uint _commission,string _metadataHash){
 
@@ -38,7 +38,7 @@ contract Hashtag is Ownable {
             false
 		);
 
-		RequesterRep = new MiniMeToken(
+		SeekerRep = new MiniMeToken(
 			_tokenfactory,
 			0,
             0,
@@ -78,9 +78,9 @@ contract Hashtag is Ownable {
 		// Duplicate this for the second Rep token
 		return address(ProviderRep);
 	}
-	function getRequesterRepTokenAddress()returns(address){
+	function getSeekerRepTokenAddress()returns(address){
 		// Duplicate this for the second Rep token
-		return address(RequesterRep);
+		return address(SeekerRep);
 	}
 
 	function getTokenAddress()returns(address){
@@ -96,15 +96,15 @@ contract Hashtag is Ownable {
 		ProviderRepAdded(_receiver,_amount);
 	}
 
-	function mintRequesterRep(address _receiver,uint _amount) {
-		mintRep(RequesterRep,_receiver,_amount);
-		RequesterRepAdded(_receiver,_amount);
+	function mintSeekerRep(address _receiver,uint _amount) {
+		mintRep(SeekerRep,_receiver,_amount);
+		SeekerRepAdded(_receiver,_amount);
 	}
 
 	function mintRep(MiniMeToken reptoken, address _receiver,uint _amount) internal {
 
 		// Only valid DealFactory contracts can mint rep ?
-		require (validFactories[msg.sender] != true);
+		require (validFactories[msg.sender] == true);
 			
 		require (reptoken.generateTokens(_receiver,_amount));
 	}

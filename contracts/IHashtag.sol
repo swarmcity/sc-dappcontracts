@@ -15,9 +15,9 @@ contract IHashtag {
   function addFactory(address _factoryAddress);
   function removeFactory(address _factoryAddress);
   function getProviderRepTokenAddress() returns(address);
-  function getRequesterRepTokenAddress() returns(address);
+  function getSeekerRepTokenAddress() returns(address);
   function getTokenAddress() returns(address);
   function getConflictResolver() returns(address);
   function mintProviderRep(address _receiver,uint _amount);
-  function mintRequesterRep(address _receiver,uint _amount);
+  function mintSeekerRep(address _receiver,uint _amount);
 }
