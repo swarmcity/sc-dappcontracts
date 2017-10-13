@@ -1,6 +1,6 @@
-pragma solidity ^0.4.8;
+pragma solidity ^0.4.15;
 
-import '../installed_contracts/zeppelin/contracts/ownership/Ownable.sol';
+import './Ownable.sol';
 import './MiniMeToken.sol';
 
 contract Hashtag is Ownable {
@@ -13,23 +13,22 @@ contract Hashtag is Ownable {
 	uint public commission;
 
 	MiniMeToken token;	// the token this hashtagcontract uses
-	// [KF] Add MiniMeToken requesterrep
-	// [KF] Add MiniMeToken providerrep
-	MiniMeToken rep;	// the reputation token ( clonable )
+	
+	MiniMeToken ProviderRep;	// the provider reputation token ( clonable )
+	MiniMeToken RequesterRep;	// the requester reputation token ( clonable )
+
 
 	string public metadataHash;	// IPFS hash to metadata of this Hashtag
 
 	event DealRegistered(address dealContract);
-	event RepAdded(address to, uint amount);
-	// [KF] add event ProviderRepAdded
-	// [KF] add event RequesterRepAdded
+	event ProviderRepAdded(address to, uint amount);
+	event RequesterRepAdded(address to, uint amount);
 
 	function Hashtag(address _token, address _tokenfactory, string _name,uint _commission,string _metadataHash){
 
-		// // [KF] create two rep tokens here, one for provider, one for requester
 		name = _name;
-//		MiniMeTokenFactory f = new MiniMeTokenFactory();
-		rep = new MiniMeToken(
+
+		ProviderRep = new MiniMeToken(
 			_tokenfactory,
 			0,
             0,
@@ -38,6 +37,17 @@ contract Hashtag is Ownable {
             'SWR',
             false
 		);
+
+		RequesterRep = new MiniMeToken(
+			_tokenfactory,
+			0,
+            0,
+            _name,
+            0,
+            'SWR',
+            false
+		);		
+
 		token = MiniMeToken(_token);
 		metadataHash = _metadataHash;
 		commission = _commission;
@@ -64,9 +74,13 @@ contract Hashtag is Ownable {
 	// 	return (validFactories[_factoryAddress] == true);
 	// }
 
-	function getRepTokenAddress()returns(address){
+	function getProviderRepTokenAddress()returns(address){
 		// Duplicate this for the second Rep token
-		return address(rep);
+		return address(ProviderRep);
+	}
+	function getRequesterRepTokenAddress()returns(address){
+		// Duplicate this for the second Rep token
+		return address(RequesterRep);
 	}
 
 	function getTokenAddress()returns(address){
@@ -77,32 +91,22 @@ contract Hashtag is Ownable {
 		return owner;
 	}
 
-	// This functionality can be taken care of by the worker
-	/*function registerDeal(address _dealContract,address _dealOwner){
-		// Only valid DealFactory contracts may register deals.
-		if (validFactories[msg.sender] != true){
-			throw;
-		}
+	function mintProviderRep(address _receiver,uint _amount) {
+		mintRep(ProviderRep,_receiver,_amount);
+		ProviderRepAdded(_receiver,_amount);
+	}
 
-		// of this deal was already registered, throw.
-		if (dealOwners[_dealContract] != 0){
-			throw;
-		}
+	function mintRequesterRep(address _receiver,uint _amount) {
+		mintRep(RequesterRep,_receiver,_amount);
+		RequesterRepAdded(_receiver,_amount);
+	}
 
-		dealOwners[_dealContract] = _dealOwner;
-		registeredDeals++;
-		DealRegistered(_dealContract);
-	}*/
+	function mintRep(MiniMeToken reptoken, address _receiver,uint _amount) internal {
 
-	function mintRep(address _receiver,uint _amount) {
-		// // [KF] mint requester rep or mint provider rep
 		// Only valid DealFactory contracts can mint rep ?
-		if (validFactories[msg.sender] != true){
-			throw;
-		}
-
-		rep.generateTokens(_receiver,_amount);
-		RepAdded(_receiver,_amount);
+		require (validFactories[msg.sender] != true);
+			
+		require (reptoken.generateTokens(_receiver,_amount));
 	}
 
 }
