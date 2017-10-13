@@ -6,8 +6,8 @@ import './MiniMeToken.sol';
 contract Hashtag is Ownable {
 
 	string public name;
-	uint public registeredDeals;
-	uint public successfulDeals;
+	//uint public registeredDeals;
+	//uint public successfulDeals;
 	mapping(address=>address) dealOwners;	// maps deal contracts to owners
 	mapping(address=>bool) public validFactories;	// who can access this hashtag ?
 	uint public commission;
@@ -20,7 +20,7 @@ contract Hashtag is Ownable {
 	string public metadataHash;	// IPFS hash to metadata of this Hashtag
 
 	event DealRegistered(address dealContract);
-	event RepAdded(address to,uint amount);
+	event RepAdded(address to, uint amount);
 	// [KF] add event ProviderRepAdded
 	// [KF] add event RequesterRepAdded
 
@@ -77,7 +77,8 @@ contract Hashtag is Ownable {
 		return owner;
 	}
 
-	function registerDeal(address _dealContract,address _dealOwner){
+	// This functionality can be taken care of by the worker
+	/*function registerDeal(address _dealContract,address _dealOwner){
 		// Only valid DealFactory contracts may register deals.
 		if (validFactories[msg.sender] != true){
 			throw;
@@ -91,7 +92,7 @@ contract Hashtag is Ownable {
 		dealOwners[_dealContract] = _dealOwner;
 		registeredDeals++;
 		DealRegistered(_dealContract);
-	}
+	}*/
 
 	function mintRep(address _receiver,uint _amount) {
 		// // [KF] mint requester rep or mint provider rep
