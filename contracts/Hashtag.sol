@@ -1,6 +1,16 @@
 pragma solidity ^0.4.15;
 
-/// Created for the world, from Swarm City, with love.
+/**
+  *  @title Hashtag
+	*  @dev Created in Swarm City anno 2017,
+	*  for the world, with love.
+	*  @description This is the hashtag contract for creating Swarm City marketplaces.
+	*  This contract is used in by the hashtagFactory to spawn new hashtags. It's a
+	*  MiniMe based contract, that holds the reputation balances,
+	*  and mint the reputation tokens.
+	*  This contract is expanded by a dealFactory in 'address dealFactory'.
+	*/
+
 
 import './Ownable.sol';
 import './MiniMeToken.sol';

@@ -1,6 +1,14 @@
 pragma solidity ^0.4.15;
 
-	/// Created for the world, from Swarm City, with love.
+/** 
+  *  @title DealForTwoFactory
+	*  @dev Created in Swarm City anno 2017,
+	*  for the world, with love.
+	*  @description This is the factory for a Deal for Two.
+	*  This contract is used in the hastag contract to create the deals,
+	*  and mint the reputation tokens.
+	*  This contract is referenced in 'address dealFactory' in the hashtag contract.
+	*/
 
 import './IMiniMeToken.sol';
 import './IHashtag.sol';
@@ -8,15 +16,17 @@ import './Ownable.sol';
 import './DealForTwoEnumerable.sol';
 
 contract DealForTwoFactory is DealForTwoEnumerable {
-	/// This is the factory for a Deal for Two. This contract is used in the hastag contract to create the deals, and mint the reputation tokens. This contract is referenced in 'address dealFactory' in the hashtag contract.
-	/// @event_NewDealForTwo This event is fired when a new deal for two is created.
-	/// @event_FundDeal This event is fired when a deal is been funded by a party.
-	/// @event_DealStatusChange This event is fired when a deal status is updated.
+
+	/// @dev Event NewDealForTwo - This event is fired when a new deal for two is created.
 	event NewDealForTwo(address owner,string dealid, string metadata);
+
+	/// @dev Event FundDeal - This event is fired when a deal is been funded by a party.
 	event FundDeal(address provider,address owner, string dealid,string metadata);
+
+	/// @dev DealStatusChange - This event is fired when a deal status is updated.
 	event DealStatusChange(address owner,string dealid,DealStatuses newstatus,string metadata);
 
-	/// @struct_dealStruct The deal object.
+	/// @param_dealStruct The deal object.
 	/// @param_status Coming from DealForTwoEnumerable.sol.
 	/// Statuses: Open, InProgress, Done, Disputed, Resolved, Cancelled
 	/// @param_commissionValue The value of the hashtag commission is stored in the deal. This prevents the hashtagmaintainer to influence an existing deal when changing the hashtagcommission fee.
@@ -35,7 +45,9 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 	mapping(bytes32=>dealStruct) deals;
 
 	IHashtag public hashtag;
-	IMiniMeToken public hashtagToken;  /// [KF] Can't we get the hashtagtoken from hashtag.token?
+	IMiniMeToken public hashtagToken;
+	/// [KF] Can't we get the hashtagtoken
+	/// from hashtag.token?
 
 	function DealForTwoFactory(IHashtag _hashtag){
 		hashtag = _hashtag;
@@ -78,7 +90,7 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 		require (d.status == DealStatuses.Open);
 
 		if (msg.sender == _dealowner){
-			// seeker goes in conflict
+			// seeker goes in conflict OMG
 
 			// can only be only when there is a provider
 			require (d.provider != 0x0 );
