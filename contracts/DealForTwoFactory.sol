@@ -1,6 +1,6 @@
 pragma solidity ^0.4.15;
 
-/** 
+/**
   *  @title DealForTwoFactory
 	*  @dev Created in Swarm City anno 2017,
 	*  for the world, with love.
@@ -78,9 +78,9 @@ contract DealForTwoFactory is DealForTwoEnumerable {
 		{
 			// cancel this Deal
 			require (hashtagToken.transfer(msg.sender,d.dealValue));
-			deals[sha3(msg.sender,_dealid)].status = DealStatuses.Canceled;
+			deals[sha3(msg.sender,_dealid)].status = DealStatuses.Cancelled;
 
-			DealStatusChange(msg.sender,_dealid,DealStatuses.Canceled,_metadata);
+			DealStatusChange(msg.sender,_dealid,DealStatuses.Cancelled,_metadata);
 		}
 	}
 

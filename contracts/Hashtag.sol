@@ -32,9 +32,6 @@ contract Hashtag is Ownable {
 	string public metadataHash;
 
 	/// Events
-	/// @event_DealRegistered
-	/// @event_ProviderRepAdded
-	/// @event_SeekerRepAdded
 	event DealRegistered(address dealContract);
 	event ProviderRepAdded(address to, uint amount);
 	event SeekerRepAdded(address to, uint amount);
