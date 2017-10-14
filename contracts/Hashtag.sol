@@ -1,5 +1,7 @@
 pragma solidity ^0.4.15;
 
+/// Created for the world, from Swarm City, with love.
+
 import './Ownable.sol';
 import './MiniMeToken.sol';
 
@@ -7,7 +9,7 @@ contract Hashtag is Ownable {
 	/// @param_name The human readable name of the hashtag
 	/// @param_dealFactory The type of deal that is created by this hashtag and the dealFactory that is allowed to mint rep
 	/// @param_commission The fixed hashtag fee in SWT
-	/// @param_token The SWT token (why isnt this hardcoded)
+	/// @param_token The SWT token
 	/// @param_ProviderRep The rep token that is minted for the Provider
 	/// @param_SeekerRep The rep token that is minted for the Seeker
 	/// @param_metadataHash The IPFS hash metadata for this hashtag
