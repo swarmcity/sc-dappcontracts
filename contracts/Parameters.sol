@@ -1,6 +1,6 @@
-pragma solidity ^0.4.15;
+pragma solidity ^0.4.8;
 
-import './Ownable.sol';
+import 'zeppelin/ownership/Ownable.sol';
 
 contract Parameters is Ownable {
 	mapping (string => string) parameters;
