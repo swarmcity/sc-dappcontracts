@@ -77,28 +77,59 @@ contract('DealForTwo', function(accounts) {
 
   describe('Hashtag and DealFactory creation flow', function() {
 
+    it("should deploy a ProviderRep minime contract", function(done) {
+      MiniMeToken.new(
+        miniMeTokenFactory.address,
+        0,
+        0,
+        "SC pioneer Provider Rep",
+        0,
+        "SPR",
+        false
+      ).then(function(_miniMeToken) {
+        assert.ok(_miniMeToken.address);
+        ProviderRep = _miniMeToken;
+        done();
+      });
+    });
+
+    it("should deploy a SeekerRep minime contract", function(done) {
+      MiniMeToken.new(
+        miniMeTokenFactory.address,
+        0,
+        0,
+        "SC seeker Provider Rep",
+        0,
+        "SSR",
+        false
+      ).then(function(_miniMeToken) {
+        assert.ok(_miniMeToken.address);
+        console.log('SWT token created at address', _miniMeToken.address);
+        SeekerRep = _miniMeToken;
+        done();
+      });
+    });
+
+
     it("should deploy 'pioneer' Hashtag", function(done) {
       // commission for this hastag is hashtagcommission SWT
-      Hashtag.new(swtToken.address, miniMeTokenFactory.address, "pioneer", hashtagcommission, "QmNogiets", {
-        gas: 4700000,
-        from: accounts[3]
-      }).then(function(instance) {
+      Hashtag.new(swtToken.address, miniMeTokenFactory.address, 
+			"pioneer", hashtagcommission,
+			accounts[3], "QmNogiets", 
+			SeekerRep, ProviderRep).then(function(instance) {
+        console.log(instance);
         hashtagContract = instance;
         assert.isNotNull(hashtagContract);
 
         hashtagContract.getProviderRepTokenAddress.call().then(function(tokenaddress) {
           console.log('hashtag provider REP token created at address', tokenaddress);
           hashtagProviderRepToken = MiniMeToken.at(tokenaddress);
-
           hashtagContract.getSeekerRepTokenAddress.call().then(function(tokenaddress) {
             console.log('hashtag seeker REP token created at address', tokenaddress);
             hashtagSeekerRepToken = MiniMeToken.at(tokenaddress);
             done();
           });
-
         });
-
-
       });
     });
 
@@ -124,7 +155,6 @@ contract('DealForTwo', function(accounts) {
         done();
       });
     });
-
     it("should deploy a dealForTwoFactory", function(done) {
       DealForTwoFactory.new(hashtagContract.address, {
         gas: 4700000
@@ -135,6 +165,7 @@ contract('DealForTwo', function(accounts) {
         done();
       });
     });
+
 
     it("should add the dealForTwoFactory to the whitelisted factories for this hashtag", function(done) {
       hashtagContract.addFactory(dealForTwoFactory.address, {
