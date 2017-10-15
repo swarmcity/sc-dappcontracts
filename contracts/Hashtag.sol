@@ -1,72 +1,96 @@
-pragma solidity ^0.4.8;
+pragma solidity ^0.4.15;
 
-import '../installed_contracts/zeppelin/contracts/ownership/Ownable.sol';
+/**
+  *  @title Hashtag
+	*  @dev Created in Swarm City anno 2017,
+	*  for the world, with love.
+	*  @description This is the hashtag contract for creating Swarm City marketplaces.
+	*  This contract is used in by the hashtagFactory to spawn new hashtags. It's a
+	*  MiniMe based contract, that holds the reputation balances,
+	*  and mint the reputation tokens.
+	*  This contract is expanded by a dealFactory in 'address dealFactory'.
+	*/
+
+
+import './Ownable.sol';
 import './MiniMeToken.sol';
 
 contract Hashtag is Ownable {
-
+	/// @param_name The human readable name of the hashtag
+	/// @param_dealFactory The type of deal that is created by this hashtag and the dealFactory that is allowed to mint rep
+	/// @param_commission The fixed hashtag fee in SWT
+	/// @param_token The SWT token
+	/// @param_ProviderRep The rep token that is minted for the Provider
+	/// @param_SeekerRep The rep token that is minted for the Seeker
+	/// @param_metadataHash The IPFS hash metadata for this hashtag
 	string public name;
-	//uint public registeredDeals;
-	//uint public successfulDeals;
-	mapping(address=>address) dealOwners;	// maps deal contracts to owners
-	mapping(address=>bool) public validFactories;	// who can access this hashtag ?
 	uint public commission;
+	address dealFactory;
+	MiniMeToken token;
+	MiniMeToken ProviderRep;
+	MiniMeToken SeekerRep;
+	string public metadataHash;
 
-	MiniMeToken token;	// the token this hashtagcontract uses
-	// [KF] Add MiniMeToken requesterrep
-	// [KF] Add MiniMeToken providerrep
-	MiniMeToken rep;	// the reputation token ( clonable )
+        event DealRegistered(address dealContract);
+	event ProviderRepAdded(address to, uint amount);
+	event SeekerRepAdded(address to, uint amount);
 
-	string public metadataHash;	// IPFS hash to metadata of this Hashtag
-
-	event DealRegistered(address dealContract);
-	event RepAdded(address to, uint amount);
-	// [KF] add event ProviderRepAdded
-	// [KF] add event RequesterRepAdded
-
-	function Hashtag(address _token, address _tokenfactory, string _name,uint _commission,string _metadataHash){
-
-		// // [KF] create two rep tokens here, one for provider, one for requester
+	function Hashtag(address _token, address _tokenfactory, 
+			string _name, uint _commission, 
+			address _dealFactory, string _metadataHash, 
+			address _ProviderRep, address _SeekerRep){
+		/// @notice The function that creates the hashtag
 		name = _name;
-//		MiniMeTokenFactory f = new MiniMeTokenFactory();
-		rep = new MiniMeToken(
-			_tokenfactory,
-			0,
-            0,
-            _name,
-            0,
-            'SWR',
-            false
-		);
+		/// @notice The dealFactory that can mint rep on this hashtag and sets the deal type
+		dealFactory = _dealFactory;
+		/// @notice The provider reputation token is created
+		ProviderRep = MiniMeToken(_ProviderRep);
+
+		/// @notice The seeker reputation token is created
+
+		SeekerRep = MiniMeToken(_SeekerRep);
 		token = MiniMeToken(_token);
 		metadataHash = _metadataHash;
 		commission = _commission;
 	}
 
-
+	/// @notice The Hashtag owner can always update the metadata for the hashtag.
 	function setMetadataHash(string _metadataHash) onlyOwner {
 		metadataHash = _metadataHash;
 	}
 
+	/// @notice The Hashtag owner can always change the commission amount
 	function setCommission(uint _newCommission) onlyOwner {
 		commission = _newCommission;
 	}
 
-	function addFactory(address _factoryAddress) onlyOwner {
-		validFactories[_factoryAddress] = true;
+	/// @notice This function mints Provider rep
+	function mintProviderRep(address _receiver, uint _amount) {
+		mintRep(ProviderRep, _receiver, _amount);
+		ProviderRepAdded(_receiver, _amount);
 	}
 
-	function removeFactory(address _factoryAddress) onlyOwner {
-		validFactories[_factoryAddress] = false;
+	/// @notice This function mints Seeker rep
+	function mintSeekerRep(address _receiver, uint _amount) {
+		mintRep(SeekerRep, _receiver, _amount);
+		SeekerRepAdded(_receiver, _amount);
 	}
 
-	// function isValidFactory(address _factoryAddress)returns(bool){
-	// 	return (validFactories[_factoryAddress] == true);
-	// }
+	/// @notice this is the function minting anything
+	function mintRep(MiniMeToken reptoken, address _receiver, uint _amount) internal {
+		// Only valid DealFactory can mint
+		require (msg.sender == dealFactory);
+		require (reptoken.generateTokens(_receiver, _amount));
+	}
 
-	function getRepTokenAddress()returns(address){
-		// Duplicate this for the second Rep token
-		return address(rep);
+	/// Read functions
+
+	function getProviderRepTokenAddress()returns(address){
+		return address(ProviderRep);
+	}
+
+	function getSeekerRepTokenAddress()returns(address){
+		return address(SeekerRep);
 	}
 
 	function getTokenAddress()returns(address){
@@ -75,34 +99,6 @@ contract Hashtag is Ownable {
 
 	function getConflictResolver() returns(address){
 		return owner;
-	}
-
-	// This functionality can be taken care of by the worker
-	/*function registerDeal(address _dealContract,address _dealOwner){
-		// Only valid DealFactory contracts may register deals.
-		if (validFactories[msg.sender] != true){
-			throw;
-		}
-
-		// of this deal was already registered, throw.
-		if (dealOwners[_dealContract] != 0){
-			throw;
-		}
-
-		dealOwners[_dealContract] = _dealOwner;
-		registeredDeals++;
-		DealRegistered(_dealContract);
-	}*/
-
-	function mintRep(address _receiver,uint _amount) {
-		// // [KF] mint requester rep or mint provider rep
-		// Only valid DealFactory contracts can mint rep ?
-		if (validFactories[msg.sender] != true){
-			throw;
-		}
-
-		rep.generateTokens(_receiver,_amount);
-		RepAdded(_receiver,_amount);
 	}
 
 }

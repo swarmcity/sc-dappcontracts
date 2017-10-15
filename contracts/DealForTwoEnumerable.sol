@@ -1,12 +1,13 @@
 pragma solidity ^0.4.11;
-
+/// [KF] Added "inprogress"
 contract DealForTwoEnumerable {
 
    	enum DealStatuses {
-    	Open,
-        Done,
-        Disputed,
-        Resolved,
-        Canceled
+  	Open,
+    Inprogress,
+      Done,
+      Disputed,
+      Resolved,
+      Cancelled
    	}
 }

@@ -1,18 +1,18 @@
-var HDWalletProvider = require("truffle-hdwallet-provider");
+// var HDWalletProvider = require("truffle-hdwallet-provider");
 
-var mnemonic = "";
-var provider = new HDWalletProvider(mnemonic, "https://ropsten.infura.io/");
+// var mnemonic = "";
+// var provider = new HDWalletProvider(mnemonic, "https://ropsten.infura.io/");
 
 module.exports = {
   networks: {
     development: {
       host: "localhost",
-      port: 8546,
+      port: 18545,
       network_id: "*"		// Match any network id
     },
-    ropsten: {
-          provider: provider,
-          network_id: 3 // official id of the ropsten network
-    }
+    // ropsten: {
+    //       provider: provider,
+    //       network_id: 3 // official id of the ropsten network
+    // }
   }
 };
