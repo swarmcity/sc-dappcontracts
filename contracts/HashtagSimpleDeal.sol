@@ -4,6 +4,7 @@ pragma solidity ^0.4.15;
   *  @title Simple Deal Hashtag
 	*  @dev Created in Swarm City anno 2017,
 	*  for the world, with love.
+	*  @description Symmetrical Escrow Deal Contract
 	*  @description This is the hashtag contract for creating Swarm City marketplaces.
 	*  This contract is used in by the hashtagFactory to spawn new hashtags. It's a
 	*  MiniMe based contract, that holds the reputation balances,
@@ -24,16 +25,15 @@ contract HashtagSimpleDeal is Ownable {
 	/// @param_metadataHash The IPFS hash metadata for this hashtag
 	string public name;
 	uint public commission;
-	address dealFactory;
 	MiniMeToken token;
 	MiniMeToken ProviderRep;
 	MiniMeToken SeekerRep;
 	address public payoutaddress;
 	string public metadataHash;
 
+	// @notice DealStatuses enum
 	enum DealStatuses {
-	Open,
-	Inprogress,
+		Open,
 		Done,
 		Disputed,
 		Resolved,
@@ -41,14 +41,13 @@ contract HashtagSimpleDeal is Ownable {
 	}
 
 	/// @param_dealStruct The deal object.
-	/// @param_status Coming from DealForTwoEnumerable.sol.
-	/// Statuses: Open, InProgress, Done, Disputed, Resolved, Cancelled
+	/// @param_status Coming from DealStatuses enum.
+	/// Statuses: Open, Done, Disputed, Resolved, Cancelled
 	/// @param_commissionValue The value of the hashtag commission is stored in the deal. This prevents the hashtagmaintainer to influence an existing deal when changing the hashtagcommission fee.
 	/// @param_dealValue The value of the deal (SWT)
 	/// @param_provider The address of the provider
-	/// @param_deals Array of deals made by this dealFactory
-	/// @param_hashtag The hashtag for which the factory is creating deals
-	/// @param_hashtagToken SWT [KF] Can't we get the hashtagtoken from hashtag.token?
+	/// @param_deals Array of deals made by this hashtag
+
 	struct dealStruct {
 		DealStatuses status;
 		uint commissionValue;
@@ -76,10 +75,11 @@ contract HashtagSimpleDeal is Ownable {
 	/// @dev DealStatusChange - This event is fired when a deal status is updated.
 	event DealStatusChange(address owner,string dealid,DealStatuses newstatus,string metadata);
 
+	/// @notice The function that creates the hashtag
 	function HashtagSimpleDeal(address _token, string _name, uint _commission, string _metadataHash,
 			address _ProviderRep, address _SeekerRep){
 
-		/// @notice The function that creates the hashtag
+		/// @notice The name of the hashtag is set
 		name = _name;
 
 		/// @notice The provider reputation token is created
@@ -118,29 +118,39 @@ contract HashtagSimpleDeal is Ownable {
 	}
 
 	/// @notice Read functions
-
+	/// @notice getProviderRepTokenAddress
+	/// @return address ProviderRep
 	function getProviderRepTokenAddress()returns(address){
 		return address(ProviderRep);
 	}
 
+	/// @notice getSeekerRepTokenAddress
+	/// @return address SeekerRep
 	function getSeekerRepTokenAddress()returns(address){
 		return address(SeekerRep);
 	}
 
+	/// @notice getTokenAddress
+	/// @return address token
 	function getTokenAddress()returns(address){
 		return address(token);
 	}
 
+	/// @notice getConflictResolver
+	/// @return address owner
 	function getConflictResolver() returns(address){
 		return owner;
 	}
 
+	/// @notice getPayoutAddress
+	/// @return address payoutaddress
 	function getPayoutAddress() returns(address){
 		return payoutaddress;
 	}
 
 	/// @notice The Deal making stuff
 
+	/// @notice The create Deal function
 	function makeDealForTwo(string _dealid, uint _offerValue, string _metadata){
 
 		// make sure there is enough to pay the commission later on
@@ -159,14 +169,16 @@ contract HashtagSimpleDeal is Ownable {
 
 	}
 
+	/// @notice The Cancel deal function
+	/// @notice Half of the hashtagfee is sent to payoutaddress
 	function cancelDeal(string _dealid,string _metadata){
 		dealStruct storage d = deals[sha3(msg.sender,_dealid)];
 		if (d.dealValue > 0 && d.provider == 0x0 && d.status == DealStatuses.Open)
 		{
-			// if you cancel the deal you pay the hashtagfee / 2
+			// @dev if you cancel the deal you pay the hashtagfee / 2
 			require (token.transfer(payoutaddress,d.commissionValue / 2));
 
-			// cancel this Deal
+			// @dev cancel this Deal
 			require (token.transfer(msg.sender,d.dealValue - d.commissionValue / 2));
 
 			deals[sha3(msg.sender,_dealid)].status = DealStatuses.Cancelled;
@@ -175,44 +187,44 @@ contract HashtagSimpleDeal is Ownable {
 		}
 	}
 
-	// seeker or provider can choose to dispute an ongoing deal
+	/// @notice seeker or provider can choose to dispute an ongoing deal
 	function dispute(string _dealid, address _dealowner,string _metadata){
 		dealStruct storage d = deals[sha3(_dealowner,_dealid)];
 		require (d.status == DealStatuses.Open);
 
 		if (msg.sender == _dealowner){
-			// seeker goes in conflict OMG
+			/// @dev seeker goes in conflict
 
-			// can only be only when there is a provider
+			/// @dev can only be only when there is a provider
 			require (d.provider != 0x0 );
 
 		}else{
-			// if not the seeker, only the provider can go in conflict
+			/// @dev if not the seeker, only the provider can go in conflict
 			require (d.provider == msg.sender);
 		}
-		// mark the deal as Disputed
+		/// @dev mark the deal as Disputed
 		deals[sha3(_dealowner,_dealid)].status = DealStatuses.Disputed;
 		DealStatusChange(_dealowner,_dealid,DealStatuses.Disputed,_metadata);
 	}
 
-	// conflict resolver can resolve a disputed deal
+	/// @notice conflict resolver can resolve a disputed deal
 	function resolve(string _dealid, address _dealowner, uint _seekerFraction, string _metadata){
 		dealStruct storage d = deals[sha3(_dealowner,_dealid)];
 
-		// this function can only be called by the current conflict resolver of the hastag
-		// Which is owner for now
+		/// @dev this function can only be called by the current conflict resolver of the hastag
+		/// @dev Which is owner for now
 		require (msg.sender == owner);
 
-		// only disputed deals can be resolved
+		/// @dev only disputed deals can be resolved
 		require (d.status == DealStatuses.Disputed) ;
 
-		// pay out commission
+		/// @dev pay out commission
 		require (token.transfer(payoutaddress,d.commissionValue));
 
-		// send the seeker fraction back to the dealowner
+		/// @dev send the seeker fraction back to the dealowner
 		require (token.transfer(_dealowner,_seekerFraction));
 
-		// send the remaining deal value back to the provider
+		/// @dev send the remaining deal value back to the provider
 		require (token.transfer(d.provider,d.dealValue * 2 - _seekerFraction));
 
 		deals[sha3(_dealowner,_dealid)].status = DealStatuses.Resolved;
@@ -220,54 +232,64 @@ contract HashtagSimpleDeal is Ownable {
 
 	}
 
+	/// @notice Provider has to fund the deal
 	function fundDeal(string _dealid, address _dealowner,string _metadata){
 
 		bytes32 key = sha3(_dealowner,_dealid);
 
 		dealStruct storage d = deals[key];
-                // only allow open deals to be funded
+
+		/// @dev only allow open deals to be funded
 		require (d.status == DealStatuses.Open);
 
-		// if the provider is filled in - the deal was already funded
+		/// @dev if the provider is filled in - the deal was already funded
 		require (d.provider == 0x0);
 
-		// put the tokens from the provider on the deal
+		/// @dev put the tokens from the provider on the deal
 		require (token.transferFrom(msg.sender,this,d.dealValue + d.commissionValue / 2));
 
-		// fill in the address of the provider ( to payout the deal later on )
+		/// @dev fill in the address of the provider ( to payout the deal later on )
 		deals[key].provider = msg.sender;
 
 		FundDeal(msg.sender,_dealowner,_dealid,_metadata);
 	}
 
+	/// @notice Read the details of a deal
+	/// @param_dealid The id of the deal
+	/// @param_dealowner The address of the deal owner
+	/// @return status, commissionValue, dealValue, provider
 	function readDeal(string _dealid, address _dealowner) returns(DealStatuses status, uint commissionValue, uint dealValue, address provider){
 		bytes32 key = sha3(_dealowner,_dealid);
 		return (deals[key].status,deals[key].commissionValue,deals[key].dealValue,deals[key].provider);
 	}
 
+	/// @notice The payout function can only be called by the deal owner.
+	/// @param_dealid The id of the deal
+	/// @param_dealowner The address of the deal owner
 	function payout(string _dealid,string _metadata){
 
 		bytes32 key = sha3(msg.sender,_dealid);
 
 		dealStruct storage d = deals[key];
 
-		// you can only payout open deals
+		/// @dev you can only payout open deals
 		require (d.status == DealStatuses.Open);
 
-		// pay out commission
+		/// @dev pay out commission
 		require (token.transfer(payoutaddress,d.commissionValue));
 
-		// pay out the provider
+		/// @dev pay out the provider
 		require (token.transfer(d.provider,d.dealValue * 2));
 
-		// mint REP for both parties
+		/// @dev mint REP for Provider
 		ProviderRep.generateTokens(d.provider, 5);
 		ProviderRepAdded(d.provider, 5);
 
+		/// @dev mint REP for Seeker
 		SeekerRep.generateTokens(msg.sender, 5);
-		SeekerRepAdded(msg.sender, 5);	
+		SeekerRepAdded(msg.sender, 5);
 
-		// mark the deal as done
+		/// @dev mark the deal as done
 		deals[key].status = DealStatuses.Done;
 		DealStatusChange(msg.sender,_dealid,DealStatuses.Done,_metadata);
 
