@@ -1,20 +1,20 @@
 pragma solidity ^0.4.15;
 
 /**
-  *  @title Hashtag
+  *  @title Simple Deal Hashtag
 	*  @dev Created in Swarm City anno 2017,
 	*  for the world, with love.
 	*  @description This is the hashtag contract for creating Swarm City marketplaces.
 	*  This contract is used in by the hashtagFactory to spawn new hashtags. It's a
 	*  MiniMe based contract, that holds the reputation balances,
 	*  and mint the reputation tokens.
-	*  This contract is expanded by a dealFactory in 'address dealFactory'.
+	*  This contract makes a specific kind of deals called "SimpleDeals"
 	*/
 
 import './Ownable.sol';
 import './MiniMeToken.sol';
 
-contract Hashtag is Ownable {
+contract HashtagSimpleDeal is Ownable {
 	/// @param_name The human readable name of the hashtag
 	/// @param_commission The fixed hashtag fee in SWT
 	/// @param_token The SWT token
@@ -28,7 +28,7 @@ contract Hashtag is Ownable {
 	MiniMeToken token;
 	MiniMeToken ProviderRep;
 	MiniMeToken SeekerRep;
-	address payoutaddress;
+	address public payoutaddress;
 	string public metadataHash;
 
 	enum DealStatuses {
@@ -76,7 +76,7 @@ contract Hashtag is Ownable {
 	/// @dev DealStatusChange - This event is fired when a deal status is updated.
 	event DealStatusChange(address owner,string dealid,DealStatuses newstatus,string metadata);
 
-	function Hashtag(address _token, string _name, uint _commission, string _metadataHash,
+	function HashtagSimpleDeal(address _token, string _name, uint _commission, string _metadataHash,
 			address _ProviderRep, address _SeekerRep){
 
 		/// @notice The function that creates the hashtag
@@ -119,22 +119,21 @@ contract Hashtag is Ownable {
 
 	/// @notice This function mints Provider rep
 	function mintProviderRep(address _receiver, uint _amount) {
-		mintRep(ProviderRep, _receiver, _amount);
+		ProviderRep.generateTokens(_receiver, _amount);
 		ProviderRepAdded(_receiver, _amount);
 	}
 
 	/// @notice This function mints Seeker rep
 	function mintSeekerRep(address _receiver, uint _amount) {
-		mintRep(SeekerRep, _receiver, _amount);
+		SeekerRep.generateTokens(_receiver, _amount);
 		SeekerRepAdded(_receiver, _amount);
 	}
-
+/*
 	/// @notice this is the function minting anything
-	function mintRep(MiniMeToken reptoken, address _receiver, uint _amount) internal {
+	function mintRep(address reptoken, address _receiver, uint _amount) internal {
 		// Only valid DealFactory can mint
-		require (msg.sender == dealFactory);
 		require (reptoken.generateTokens(_receiver, _amount));
-	}
+	}*/
 
 	/// @notice Read functions
 
@@ -166,7 +165,7 @@ contract Hashtag is Ownable {
 		require (commission / 2 <= _offerValue);
 
 		// fund this deal
-		require (token.transferFrom(msg.sender,this,_offerValue));
+		require (token.transferFrom(msg.sender,this,_offerValue + commission / 2));
 
 		// if deal already exists don't allow to overwrite it
 		require (deals[sha3(msg.sender,_dealid)].commissionValue == 0);
@@ -182,8 +181,12 @@ contract Hashtag is Ownable {
 		dealStruct storage d = deals[sha3(msg.sender,_dealid)];
 		if (d.dealValue > 0 && d.provider == 0x0 && d.status == DealStatuses.Open)
 		{
+			// if you cancel the deal you pay the hashtagfee / 2
+			require (token.transfer(payoutaddress,d.commissionValue / 2));
+
 			// cancel this Deal
-			require (token.transfer(msg.sender,d.dealValue));
+			require (token.transfer(msg.sender,d.dealValue - d.commissionValue / 2));
+
 			deals[sha3(msg.sender,_dealid)].status = DealStatuses.Cancelled;
 
 			DealStatusChange(msg.sender,_dealid,DealStatuses.Cancelled,_metadata);
@@ -221,11 +224,14 @@ contract Hashtag is Ownable {
 		// only disputed deals can be resolved
 		require (d.status == DealStatuses.Disputed) ;
 
+		// pay out commission
+		require (token.transfer(payoutaddress,d.commissionValue));
+
 		// send the seeker fraction back to the dealowner
 		require (token.transfer(_dealowner,_seekerFraction));
 
 		// send the remaining deal value back to the provider
-		require (token.transfer(d.provider,d.dealValue - _seekerFraction));
+		require (token.transfer(d.provider,d.dealValue * 2 - _seekerFraction));
 
 		deals[sha3(_dealowner,_dealid)].status = DealStatuses.Resolved;
 		DealStatusChange(_dealowner,_dealid,DealStatuses.Resolved,_metadata);
@@ -244,7 +250,7 @@ contract Hashtag is Ownable {
 		require (d.provider == 0x0);
 
 		// put the tokens from the provider on the deal
-		require (token.transferFrom(msg.sender,this,d.dealValue));
+		require (token.transferFrom(msg.sender,this,d.dealValue + d.commissionValue / 2));
 
 		// fill in the address of the provider ( to payout the deal later on )
 		deals[key].provider = msg.sender;
@@ -267,14 +273,14 @@ contract Hashtag is Ownable {
 		require (d.status == DealStatuses.Open);
 
 		// pay out commission
-		require (token.transfer(owner,d.commissionValue));
+		require (token.transfer(payoutaddress,d.commissionValue));
 
 		// pay out the provider
-		require (token.transfer(d.provider,d.dealValue * 2 - d.commissionValue));
+		require (token.transfer(d.provider,d.dealValue * 2));
 
 		// mint REP for both parties
-		mintProviderRep(d.provider,5);
-		mintSeekerRep(msg.sender,5);
+		/*mintProviderRep(d.provider,5);
+		mintSeekerRep(msg.sender,5);*/
 
 		// mark the deal as done
 		deals[key].status = DealStatuses.Done;
