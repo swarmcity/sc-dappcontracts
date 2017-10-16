@@ -125,7 +125,7 @@ contract('HashtagSimpleDeal', function(accounts) {
     });
 
     it("should change controller of ProviderRepToken to 'PioneerTest' Hashtag", function(done) {
-      
+
       hashtagProviderRepToken.changeController(hashtagContract.address).then(function() {
         hashtagProviderRepToken.controller.call().then(function(controller){
           assert.equal(controller,hashtagContract.address, "controller should be PioneerTest");
