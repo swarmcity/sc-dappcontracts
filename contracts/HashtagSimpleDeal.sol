@@ -13,7 +13,7 @@ pragma solidity ^0.4.15;
 	*/
 
 import './Ownable.sol';
-import './MiniMeToken.sol';
+import './IMiniMeToken.sol';
 
 contract HashtagSimpleDeal is Ownable {
 	/// @param_name The human readable name of the hashtag
@@ -25,9 +25,9 @@ contract HashtagSimpleDeal is Ownable {
 	/// @param_metadataHash The IPFS hash metadata for this hashtag
 	string public name;
 	uint public commission;
-	MiniMeToken token;
-	MiniMeToken ProviderRep;
-	MiniMeToken SeekerRep;
+	IMiniMeToken token;
+	IMiniMeToken ProviderRep;
+	IMiniMeToken SeekerRep;
 	address public payoutaddress;
 	string public metadataHash;
 
@@ -83,13 +83,13 @@ contract HashtagSimpleDeal is Ownable {
 		name = _name;
 
 		/// @notice The provider reputation token is created
-		ProviderRep = MiniMeToken(_ProviderRep);
+		ProviderRep = IMiniMeToken(_ProviderRep);
 
 		/// @notice The seeker reputation token is created
-		SeekerRep = MiniMeToken(_SeekerRep);
+		SeekerRep = IMiniMeToken(_SeekerRep);
 
 		/// @notice SWT token is added
-		token = MiniMeToken(_token);
+		token = IMiniMeToken(_token);
 
 		/// Metadata added
 		metadataHash = _metadataHash;
@@ -255,17 +255,12 @@ contract HashtagSimpleDeal is Ownable {
 	}
 
 	/// @notice Read the details of a deal
-	/// @param_dealid The id of the deal
-	/// @param_dealowner The address of the deal owner
-	/// @return status, commissionValue, dealValue, provider
 	function readDeal(string _dealid, address _dealowner) returns(DealStatuses status, uint commissionValue, uint dealValue, address provider){
 		bytes32 key = sha3(_dealowner,_dealid);
 		return (deals[key].status,deals[key].commissionValue,deals[key].dealValue,deals[key].provider);
 	}
 
 	/// @notice The payout function can only be called by the deal owner.
-	/// @param_dealid The id of the deal
-	/// @param_dealowner The address of the deal owner
 	function payout(string _dealid,string _metadata){
 
 		bytes32 key = sha3(msg.sender,_dealid);
