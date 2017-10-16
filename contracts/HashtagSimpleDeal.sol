@@ -37,8 +37,7 @@ contract HashtagSimpleDeal is Ownable {
 		Done,
 		Disputed,
 		Resolved,
-		Cancelled, 
-		InProgress
+		Cancelled
 	}
 
 	/// @param_dealStruct The deal object.
