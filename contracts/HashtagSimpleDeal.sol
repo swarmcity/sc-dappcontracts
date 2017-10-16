@@ -117,24 +117,6 @@ contract HashtagSimpleDeal is Ownable {
 		commission = _newCommission;
 	}
 
-	/// @notice This function mints Provider rep
-	function mintProviderRep(address _receiver, uint _amount) {
-		ProviderRep.generateTokens(_receiver, _amount);
-		ProviderRepAdded(_receiver, _amount);
-	}
-
-	/// @notice This function mints Seeker rep
-	function mintSeekerRep(address _receiver, uint _amount) {
-		SeekerRep.generateTokens(_receiver, _amount);
-		SeekerRepAdded(_receiver, _amount);
-	}
-/*
-	/// @notice this is the function minting anything
-	function mintRep(address reptoken, address _receiver, uint _amount) internal {
-		// Only valid DealFactory can mint
-		require (reptoken.generateTokens(_receiver, _amount));
-	}*/
-
 	/// @notice Read functions
 
 	function getProviderRepTokenAddress()returns(address){
@@ -279,8 +261,11 @@ contract HashtagSimpleDeal is Ownable {
 		require (token.transfer(d.provider,d.dealValue * 2));
 
 		// mint REP for both parties
-		/*mintProviderRep(d.provider,5);
-		mintSeekerRep(msg.sender,5);*/
+		ProviderRep.generateTokens(d.provider, 5);
+		ProviderRepAdded(d.provider, 5);
+
+		SeekerRep.generateTokens(msg.sender, 5);
+		SeekerRepAdded(msg.sender, 5);	
 
 		// mark the deal as done
 		deals[key].status = DealStatuses.Done;

@@ -83,7 +83,7 @@ contract('HashtagSimpleDeal', function(accounts) {
         false
       ).then(function(_miniMeToken) {
         assert.ok(_miniMeToken.address);
-        ProviderRep = _miniMeToken.address;
+        hashtagProviderRepToken = _miniMeToken; //.address;
         done();
       });
     });
@@ -99,7 +99,7 @@ contract('HashtagSimpleDeal', function(accounts) {
         false
       ).then(function(_miniMeToken) {
         assert.ok(_miniMeToken.address);
-        SeekerRep = _miniMeToken.adddress;
+        hashtagSeekerRepToken = _miniMeToken; //.adddress;
         done();
       });
     });
@@ -108,17 +108,37 @@ contract('HashtagSimpleDeal', function(accounts) {
     it("should deploy 'PioneerTest' Hashtag", function(done) {
 
       // commission for this hastag is hashtagcommission SWT
-      Hashtag.new(swtToken.address, "PioneerTest", hashtagcommission, "QmNogIets", ProviderRep, SeekerRep).then(function(instance) {
+      Hashtag.new(swtToken.address, "PioneerTest", hashtagcommission, "QmNogIets", hashtagProviderRepToken.address, hashtagSeekerRepToken.address).then(function(instance) {
         //console.log(instance);
         hashtagContract = instance;
         assert.isNotNull(hashtagContract);
         //console.log(hashtagContract);
-        hashtagContract.getProviderRepTokenAddress.call().then(function(tokenaddress) {
-          hashtagProviderRepToken = MiniMeToken.at(tokenaddress);
-          hashtagContract.getSeekerRepTokenAddress.call().then(function(tokenaddress) {
-            hashtagSeekerRepToken = MiniMeToken.at(tokenaddress);
-            done();
-          });
+        // hashtagContract.getProviderRepTokenAddress.call().then(function(tokenaddress) {
+        //   hashtagProviderRepToken = MiniMeToken.at(tokenaddress);
+        //   hashtagContract.getSeekerRepTokenAddress.call().then(function(tokenaddress) {
+        //     hashtagSeekerRepToken = MiniMeToken.at(tokenaddress);
+        //     done();
+        //   });
+        // });
+        done();
+      });
+    });
+
+    it("should change controller of ProviderRepToken to 'PioneerTest' Hashtag", function(done) {
+      
+      hashtagProviderRepToken.changeController(hashtagContract.address).then(function() {
+        hashtagProviderRepToken.controller.call().then(function(controller){
+          assert.equal(controller,hashtagContract.address, "controller should be PioneerTest");
+          done();
+        });
+      });
+    });
+
+    it("should change controller of ProviderRepToken to 'PioneerTest' Hashtag", function(done) {
+      hashtagSeekerRepToken.changeController(hashtagContract.address).then(function() {
+        hashtagSeekerRepToken.controller.call().then(function(controller){
+          assert.equal(controller,hashtagContract.address, "controller should be PioneerTest");
+          done();
         });
       });
     });
@@ -373,23 +393,21 @@ contract('HashtagSimpleDeal', function(accounts) {
 
 
 
+    it("should see Seeker REP on Seekers account ", function(done) {
+      hashtagSeekerRepToken.balanceOf(accounts[1]).then(function(balance) {
+        assert.equal(balance.toNumber(), 5, "seeker accounts seekerREP balance not correct");
+        console.log('SeekerRepBalance of seeker rep account=', balance.toNumber());
+        done();
+      });
+    });
 
-
-    // it("should see Seeker REP on Seekers account ", function(done) {
-    //   hashtagSeekerRepToken.balanceOf(accounts[1]).then(function(balance) {
-    //     assert.equal(balance.toNumber(), 5, "seeker accounts seekerREP balance not correct");
-    //     console.log('SeekerRepBalance of seeker rep account=', balance.toNumber());
-    //     done();
-    //   });
-    // });
-
-    // it("should see ProviderREP on providers account ", function(done) {
-    //   hashtagProviderRepToken.balanceOf(accounts[2]).then(function(balance) {
-    //     assert.equal(balance.toNumber(), 5, "Provider  providerREP balance not correct");
-    //     console.log('ProviderRepBalance of provider account=', balance.toNumber());
-    //     done();
-    //   });
-    // });
+    it("should see ProviderREP on providers account ", function(done) {
+      hashtagProviderRepToken.balanceOf(accounts[2]).then(function(balance) {
+        assert.equal(balance.toNumber(), 5, "Provider  providerREP balance not correct");
+        console.log('ProviderRepBalance of provider account=', balance.toNumber());
+        done();
+      });
+    });
   });
 
   describe('SimpleDeal conflict flow', function() {
@@ -512,11 +530,11 @@ contract('HashtagSimpleDeal', function(accounts) {
         gas: 4700000
       }).then(function(res) {
         console.log('gas used:', res.receipt.gasUsed);
-            gasStats.push({
-              name: 'conflict',
-              gasUsed: res.receipt.gasUsed
-            });
-            done();
+        gasStats.push({
+          name: 'conflict',
+          gasUsed: res.receipt.gasUsed
+        });
+        done();
       });
     });
 
@@ -533,11 +551,11 @@ contract('HashtagSimpleDeal', function(accounts) {
         gas: 4700000
       }).then(function(res) {
         console.log('gas used:', res.receipt.gasUsed);
-            gasStats.push({
-              name: 'resolve',
-              gasUsed: res.receipt.gasUsed
-            });
-            done();
+        gasStats.push({
+          name: 'resolve',
+          gasUsed: res.receipt.gasUsed
+        });
+        done();
       });
     });
 
@@ -575,8 +593,6 @@ contract('HashtagSimpleDeal', function(accounts) {
         done();
       });
     });
-
-
 
 
 
