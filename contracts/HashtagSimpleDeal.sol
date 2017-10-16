@@ -182,6 +182,7 @@ contract HashtagSimpleDeal is Ownable {
 			require (token.transfer(payoutaddress,d.commissionValue / 2));
 
 			// @dev cancel this Deal
+			require ( d.dealValue - d.commissionValue / 2 <= d.dealValue); 
 			require (token.transfer(msg.sender,d.dealValue - d.commissionValue / 2));
 
 			deals[sha3(msg.sender,_dealid)].status = DealStatuses.Cancelled;
@@ -228,6 +229,7 @@ contract HashtagSimpleDeal is Ownable {
 		require (token.transfer(_dealowner,_seekerFraction));
 
 		/// @dev send the remaining deal value back to the provider
+		require(d.dealValue * 2 - _seekerFraction <= d.dealValue * 2);
 		require (token.transfer(d.provider,d.dealValue * 2 - _seekerFraction));
 
 		deals[sha3(_dealowner,_dealid)].status = DealStatuses.Resolved;
@@ -249,6 +251,7 @@ contract HashtagSimpleDeal is Ownable {
 		require (d.provider == 0x0);
 
 		/// @dev put the tokens from the provider on the deal
+		require (d.dealValue + d.commissionValue / 2 >= d.dealValue);
 		require (token.transferFrom(msg.sender,this,d.dealValue + d.commissionValue / 2));
 
 		/// @dev fill in the address of the provider ( to payout the deal later on )
