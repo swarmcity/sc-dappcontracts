@@ -260,12 +260,6 @@ contract HashtagSimpleDeal is Ownable {
 		FundDeal(msg.sender,_dealowner,_dealid,_metadata);
 	}
 
-	/// @notice Read the details of a deal
-	function readDeal(string _dealid, address _dealowner) returns(DealStatuses status, uint commissionValue, uint dealValue, address provider){
-		bytes32 key = sha3(_dealowner,_dealid);
-		return (deals[key].status,deals[key].commissionValue,deals[key].dealValue,deals[key].provider);
-	}
-
 	/// @notice The payout function can only be called by the deal owner.
 	function payout(string _dealid,string _metadata){
 
@@ -295,5 +289,14 @@ contract HashtagSimpleDeal is Ownable {
 		DealStatusChange(msg.sender,_dealid,DealStatuses.Done,_metadata);
 
 	}
+
+	/// @notice Read the details of a deal
+	function readDeal(string _dealid, address _dealowner) 
+		constant returns(DealStatuses status, uint commissionValue, 
+				uint dealValue, address provider){
+		bytes32 key = sha3(_dealowner,_dealid);
+		return (deals[key].status,deals[key].commissionValue,deals[key].dealValue,deals[key].provider);
+	}
+
 
 }
