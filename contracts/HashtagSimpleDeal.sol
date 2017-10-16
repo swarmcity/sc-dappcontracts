@@ -37,7 +37,8 @@ contract HashtagSimpleDeal is Ownable {
 		Done,
 		Disputed,
 		Resolved,
-		Cancelled
+		Cancelled, 
+		InProgress
 	}
 
 	/// @param_dealStruct The deal object.
@@ -157,10 +158,12 @@ contract HashtagSimpleDeal is Ownable {
 		require (commission / 2 <= _offerValue);
 
 		// fund this deal
-		require (token.transferFrom(msg.sender,this,_offerValue + commission / 2));
+                require ( _offerValue + commission / 2 >= _offerValue); //overflow protection
+		require (token.transferFrom(msg.sender,this, _offerValue + commission / 2));
 
 		// if deal already exists don't allow to overwrite it
-		require (deals[sha3(msg.sender,_dealid)].commissionValue == 0);
+		require (deals[sha3(msg.sender,_dealid)].commissionValue == 0 && 
+			deals[sha3(msg.sender,_dealid)].dealValue == 0);
 
 		// if it's funded - fill in the details
 		deals[sha3(msg.sender,_dealid)] = dealStruct(DealStatuses.Open,commission,_offerValue,0);
