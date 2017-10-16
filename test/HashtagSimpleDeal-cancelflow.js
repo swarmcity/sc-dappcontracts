@@ -70,6 +70,99 @@ contract('HashtagSimpleDeal', function(accounts) {
     });
   });
 
+      describe('Hashtag Simple Deal creation flow', function() {
+
+        it("should deploy a ProviderRep minime contract", function(done) {
+          MiniMeToken.new(
+            miniMeTokenFactory.address,
+            0,
+            0,
+            "Swarm City Provider Rep",
+            0,
+            "SWR",
+            false
+          ).then(function(_miniMeToken) {
+            assert.ok(_miniMeToken.address);
+            hashtagProviderRepToken = _miniMeToken; //.address;
+            done();
+          });
+        });
+
+        it("should deploy a SeekerRep minime contract", function(done) {
+          MiniMeToken.new(
+            miniMeTokenFactory.address,
+            0,
+            0,
+            "Swarm City Seeker Rep",
+            0,
+            "SWR",
+            false
+          ).then(function(_miniMeToken) {
+            assert.ok(_miniMeToken.address);
+            hashtagSeekerRepToken = _miniMeToken; //.adddress;
+            done();
+          });
+        });
+
+
+        it("should deploy 'PioneerTest' Hashtag", function(done) {
+
+          // commission for this hastag is hashtagcommission SWT
+          Hashtag.new(swtToken.address, "PioneerTest", hashtagcommission, "QmNogIets", hashtagProviderRepToken.address, hashtagSeekerRepToken.address).then(function(instance) {
+            //console.log(instance);
+            hashtagContract = instance;
+            assert.isNotNull(hashtagContract);
+            //console.log(hashtagContract);
+            // hashtagContract.getProviderRepTokenAddress.call().then(function(tokenaddress) {
+            //   hashtagProviderRepToken = MiniMeToken.at(tokenaddress);
+            //   hashtagContract.getSeekerRepTokenAddress.call().then(function(tokenaddress) {
+            //     hashtagSeekerRepToken = MiniMeToken.at(tokenaddress);
+            //     done();
+            //   });
+            // });
+            done();
+          });
+        });
+
+        it("should change controller of ProviderRepToken to 'PioneerTest' Hashtag", function(done) {
+
+          hashtagProviderRepToken.changeController(hashtagContract.address).then(function() {
+            hashtagProviderRepToken.controller.call().then(function(controller){
+              assert.equal(controller,hashtagContract.address, "controller should be PioneerTest");
+              done();
+            });
+          });
+        });
+
+        it("should change controller of ProviderRepToken to 'PioneerTest' Hashtag", function(done) {
+          hashtagSeekerRepToken.changeController(hashtagContract.address).then(function() {
+            hashtagSeekerRepToken.controller.call().then(function(controller){
+              assert.equal(controller,hashtagContract.address, "controller should be PioneerTest");
+              done();
+            });
+          });
+        });
+
+        it("should set payout address to address[4]", function(done) {
+          hashtagContract.setPayoutAddress(payoutaddress, {
+            gas: 4700000,
+            from: accounts[0]
+          }).then(function(res) {
+            gasStats.push({
+              name: 'setPayoutAddress',
+              gasUsed: res.receipt.gasUsed
+            });
+            done();
+          });
+        });
+
+
+
+
+  });
+
+
+
   describe('SimpleDeal Cancel flow', function() {
 
     it("should give Seeker allowance to HashtagSimpleDeal", function(done) {
