@@ -1,3 +1,10 @@
 {
-	"description" : "This is the first hashtag in the Swarm City ecosystem"
-}
+  	"title": "BoardwalkTest",
+  	"description": "This is the first Boardwalk hashtag for testing",
+  	"contact": [
+  		{
+  			"name": "Bernd Lapp",
+  			"link": "https://twitter.com/berndlapp/"
+  		}
+	]  	
+  }

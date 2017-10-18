@@ -8,7 +8,12 @@ module.exports = {
     development: {
       host: "localhost",
       port: 18545,
-      network_id: "*"		// Match any network id
+      network_id: "*"
+    },
+    live: {
+      host: "localhost",
+      port: 8545,
+      network_id: "1"   // Match any network id
     },
     // ropsten: {
     //       provider: provider,
