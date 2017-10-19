@@ -151,23 +151,23 @@ contract HashtagSimpleDeal is Ownable {
 	/// @notice The Deal making stuff
 
 	/// @notice The create Deal function
-	function makeDealForTwo(string _dealid, uint _offerValue, string _metadata){
+	function makeDealForTwo(bytes32 _dealhash, uint _offerValue, string _metadata){
 
 		// make sure there is enough to pay the commission later on
 		require (commission / 2 <= _offerValue);
 
 		// fund this deal
-                require ( _offerValue + commission / 2 >= _offerValue); //overflow protection
+    require ( _offerValue + commission / 2 >= _offerValue); //overflow protection
 		require (token.transferFrom(msg.sender,this, _offerValue + commission / 2));
 
 		// if deal already exists don't allow to overwrite it
-		require (deals[sha3(msg.sender,_dealid)].commissionValue == 0 && 
-			deals[sha3(msg.sender,_dealid)].dealValue == 0);
+		require (deals[sha3(msg.sender,_dealhash)].commissionValue == 0 &&
+			deals[sha3(msg.sender,_dealhash)].dealValue == 0);
 
 		// if it's funded - fill in the details
-		deals[sha3(msg.sender,_dealid)] = dealStruct(DealStatuses.Open,commission,_offerValue,0);
+		deals[sha3(msg.sender,_dealhash)] = dealStruct(DealStatuses.Open,commission,_offerValue,0);
 
-		NewDealForTwo(msg.sender,_dealid,_metadata);
+		NewDealForTwo(msg.sender,_dealhash,_metadata);
 
 	}
 
@@ -181,7 +181,7 @@ contract HashtagSimpleDeal is Ownable {
 			require (token.transfer(payoutaddress,d.commissionValue / 2));
 
 			// @dev cancel this Deal
-			require ( d.dealValue - d.commissionValue / 2 <= d.dealValue); 
+			require ( d.dealValue - d.commissionValue / 2 <= d.dealValue);
 			require (token.transfer(msg.sender,d.dealValue - d.commissionValue / 2));
 
 			deals[sha3(msg.sender,_dealid)].status = DealStatuses.Cancelled;
@@ -239,7 +239,7 @@ contract HashtagSimpleDeal is Ownable {
 	/// @notice Provider has to fund the deal
 	function fundDeal(string _dealid, address _dealowner,string _metadata){
 
-		bytes32 key = sha3(_dealowner,_dealid);
+		bytes32 key = sha3(_dealowner,sha3(_dealid));
 
 		dealStruct storage d = deals[key];
 
@@ -276,8 +276,8 @@ contract HashtagSimpleDeal is Ownable {
 		require (token.transfer(d.provider,d.dealValue * 2));
 
 		/// @dev mint REP for Provider
-		ProviderRep.generateTokens(d.provider, 5);
-		ProviderRepAdded(d.provider, 5);
+		ProviderRep.generateTokens(d.provider, 5000000000000000000);
+		ProviderRepAdded(d.provider, 5000000000000000000);
 
 		/// @dev mint REP for Seeker
 		SeekerRep.generateTokens(msg.sender, 5);
@@ -290,8 +290,8 @@ contract HashtagSimpleDeal is Ownable {
 	}
 
 	/// @notice Read the details of a deal
-	function readDeal(string _dealid, address _dealowner) 
-		constant returns(DealStatuses status, uint commissionValue, 
+	function readDeal(string _dealid, address _dealowner)
+		constant returns(DealStatuses status, uint commissionValue,
 				uint dealValue, address provider){
 		bytes32 key = sha3(_dealowner,_dealid);
 		return (deals[key].status,deals[key].commissionValue,deals[key].dealValue,deals[key].provider);
