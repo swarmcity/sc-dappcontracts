@@ -39,7 +39,7 @@ module.exports = function(callback) {
 		HashtagSimpleDeal.new(
 			self.web3.toHex(status.swttokenaddress),
 			metaData.title,
-			1e18 * 6,
+			1e17 * 6,
 			status.metadata,
 			self.web3.toHex(status.providerrepaddress),
 			self.web3.toHex(status.supplierrepaddress), {

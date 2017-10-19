@@ -42,7 +42,7 @@ module.exports = function(callback) {
 			0,
 			0,
 			metaData.title + " Supplier Rep",
-			18,
+			0,
 			"SWR",
 			false, {
 				gas: 3000000,

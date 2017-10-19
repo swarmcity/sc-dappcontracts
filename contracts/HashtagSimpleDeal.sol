@@ -57,9 +57,6 @@ contract HashtagSimpleDeal is Ownable {
 
 	mapping(bytes32=>dealStruct) deals;
 
-	/// Deal registered
-	event DealRegistered(string dealid);
-
 	/// Reputation token for provider is minted and sent
 	event ProviderRepAdded(address to, uint amount);
 
@@ -67,13 +64,13 @@ contract HashtagSimpleDeal is Ownable {
 	event SeekerRepAdded(address to, uint amount);
 
 	/// @dev Event NewDealForTwo - This event is fired when a new deal for two is created.
-	event NewDealForTwo(address owner,string dealid, string metadata);
+	event NewDealForTwo(address owner,bytes32 dealhash, string metadata);
 
 	/// @dev Event FundDeal - This event is fired when a deal is been funded by a party.
-	event FundDeal(address provider,address owner, string dealid,string metadata);
+	event FundDeal(address provider,address owner, bytes32 dealhash,string metadata);
 
 	/// @dev DealStatusChange - This event is fired when a deal status is updated.
-	event DealStatusChange(address owner,string dealid,DealStatuses newstatus,string metadata);
+	event DealStatusChange(address owner,bytes32 dealhash,DealStatuses newstatus,string metadata);
 
 	/// @notice The function that creates the hashtag
 	function HashtagSimpleDeal(address _token, string _name, uint _commission, string _metadataHash,
@@ -157,7 +154,7 @@ contract HashtagSimpleDeal is Ownable {
 		require (commission / 2 <= _offerValue);
 
 		// fund this deal
-    require ( _offerValue + commission / 2 >= _offerValue); //overflow protection
+    	require ( _offerValue + commission / 2 >= _offerValue); //overflow protection
 		require (token.transferFrom(msg.sender,this, _offerValue + commission / 2));
 
 		// if deal already exists don't allow to overwrite it
@@ -173,8 +170,8 @@ contract HashtagSimpleDeal is Ownable {
 
 	/// @notice The Cancel deal function
 	/// @notice Half of the hashtagfee is sent to payoutaddress
-	function cancelDeal(string _dealid,string _metadata){
-		dealStruct storage d = deals[sha3(msg.sender,_dealid)];
+	function cancelDeal(bytes32 _dealhash,string _metadata){
+		dealStruct storage d = deals[sha3(msg.sender,_dealhash)];
 		if (d.dealValue > 0 && d.provider == 0x0 && d.status == DealStatuses.Open)
 		{
 			// @dev if you cancel the deal you pay the hashtagfee / 2
@@ -184,15 +181,15 @@ contract HashtagSimpleDeal is Ownable {
 			require ( d.dealValue - d.commissionValue / 2 <= d.dealValue);
 			require (token.transfer(msg.sender,d.dealValue - d.commissionValue / 2));
 
-			deals[sha3(msg.sender,_dealid)].status = DealStatuses.Cancelled;
+			deals[sha3(msg.sender,_dealhash)].status = DealStatuses.Cancelled;
 
-			DealStatusChange(msg.sender,_dealid,DealStatuses.Cancelled,_metadata);
+			DealStatusChange(msg.sender,_dealhash,DealStatuses.Cancelled,_metadata);
 		}
 	}
 
 	/// @notice seeker or provider can choose to dispute an ongoing deal
-	function dispute(string _dealid, address _dealowner,string _metadata){
-		dealStruct storage d = deals[sha3(_dealowner,_dealid)];
+	function dispute(bytes32 _dealhash, address _dealowner,string _metadata){
+		dealStruct storage d = deals[sha3(_dealowner,_dealhash)];
 		require (d.status == DealStatuses.Open);
 
 		if (msg.sender == _dealowner){
@@ -206,13 +203,13 @@ contract HashtagSimpleDeal is Ownable {
 			require (d.provider == msg.sender);
 		}
 		/// @dev mark the deal as Disputed
-		deals[sha3(_dealowner,_dealid)].status = DealStatuses.Disputed;
-		DealStatusChange(_dealowner,_dealid,DealStatuses.Disputed,_metadata);
+		deals[sha3(_dealowner,_dealhash)].status = DealStatuses.Disputed;
+		DealStatusChange(_dealowner,_dealhash,DealStatuses.Disputed,_metadata);
 	}
 
 	/// @notice conflict resolver can resolve a disputed deal
-	function resolve(string _dealid, address _dealowner, uint _seekerFraction, string _metadata){
-		dealStruct storage d = deals[sha3(_dealowner,_dealid)];
+	function resolve(bytes32 _dealhash, address _dealowner, uint _seekerFraction, string _metadata){
+		dealStruct storage d = deals[sha3(_dealowner,_dealhash)];
 
 		/// @dev this function can only be called by the current conflict resolver of the hastag
 		/// @dev Which is owner for now
@@ -231,8 +228,8 @@ contract HashtagSimpleDeal is Ownable {
 		require(d.dealValue * 2 - _seekerFraction <= d.dealValue * 2);
 		require (token.transfer(d.provider,d.dealValue * 2 - _seekerFraction));
 
-		deals[sha3(_dealowner,_dealid)].status = DealStatuses.Resolved;
-		DealStatusChange(_dealowner,_dealid,DealStatuses.Resolved,_metadata);
+		deals[sha3(_dealowner,_dealhash)].status = DealStatuses.Resolved;
+		DealStatusChange(_dealowner,_dealhash,DealStatuses.Resolved,_metadata);
 
 	}
 
@@ -256,13 +253,13 @@ contract HashtagSimpleDeal is Ownable {
 		/// @dev fill in the address of the provider ( to payout the deal later on )
 		deals[key].provider = msg.sender;
 
-		FundDeal(msg.sender,_dealowner,_dealid,_metadata);
+		FundDeal(msg.sender,_dealowner,sha3(_dealid),_metadata);
 	}
 
 	/// @notice The payout function can only be called by the deal owner.
-	function payout(string _dealid,string _metadata){
+	function payout(bytes23 _dealhash,string _metadata){
 
-		bytes32 key = sha3(msg.sender,_dealid);
+		bytes32 key = sha3(msg.sender,_dealhash);
 
 		dealStruct storage d = deals[key];
 
@@ -285,15 +282,15 @@ contract HashtagSimpleDeal is Ownable {
 
 		/// @dev mark the deal as done
 		deals[key].status = DealStatuses.Done;
-		DealStatusChange(msg.sender,_dealid,DealStatuses.Done,_metadata);
+		DealStatusChange(msg.sender,_dealhash,DealStatuses.Done,_metadata);
 
 	}
 
 	/// @notice Read the details of a deal
-	function readDeal(string _dealid, address _dealowner)
+	function readDeal(bytes32 _dealhash, address _dealowner)
 		constant returns(DealStatuses status, uint commissionValue,
 				uint dealValue, address provider){
-		bytes32 key = sha3(_dealowner,_dealid);
+		bytes32 key = sha3(_dealowner,_dealhash);
 		return (deals[key].status,deals[key].commissionValue,deals[key].dealValue,deals[key].provider);
 	}
 
