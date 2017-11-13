@@ -12,6 +12,7 @@ contract SwarmCity is Ownable {
 		numVouchers = 0;
 		delete vouchers;
 		SwarmCityHash = _hash;
+		//this?
 		vouchSwarmCity(msg.sender);
 	}
 

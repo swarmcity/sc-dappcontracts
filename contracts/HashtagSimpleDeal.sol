@@ -99,6 +99,32 @@ contract HashtagSimpleDeal is Ownable {
 		payoutaddress = msg.sender;
 	}
 
+	/// @notice the approval function that is triggered by the tokencontract
+	/*ApproveAndCallFallBack(_spender).receiveApproval(
+			msg.sender,
+			_amount,
+			this,
+			_extraData
+	);*/
+	function receiveApproval(address _msgsender, uint _amount, address _fromcontract, bytes _extraData)  {
+		uint command = _extraData[0].// do this do another format
+		string _dealHash = _extraData
+		uint _offerValue = _extraData
+		string _metaData = _extraData
+
+		/// @notice If the command is makeDealForTwo
+		if(command==0) {
+			this.makeDealForTwo(_dealHash, _offerValue, _metaData)
+		}
+
+		/// @notice If the command is FundDeal
+		/// @notice If the command is cancelDeal
+		/// @notice If the command is resolve
+		/// @notice If the command is Payout
+		/// @notice If the command is nothing
+
+	}
+
 	/// @notice The Hashtag owner can always update the payout address.
 	function setPayoutAddress(address _payoutaddress) onlyOwner {
 		payoutaddress = _payoutaddress;
@@ -154,7 +180,7 @@ contract HashtagSimpleDeal is Ownable {
 		require (commission / 2 <= _offerValue);
 
 		// fund this deal
-    	require ( _offerValue + commission / 2 >= _offerValue); //overflow protection
+    require ( _offerValue + commission / 2 >= _offerValue); //overflow protection
 		require (token.transferFrom(msg.sender,this, _offerValue + commission / 2));
 
 		// if deal already exists don't allow to overwrite it
@@ -198,7 +224,7 @@ contract HashtagSimpleDeal is Ownable {
 			/// @dev can only be only when there is a provider
 			require (d.provider != 0x0 );
 
-		}else{
+		} else {
 			/// @dev if not the seeker, only the provider can go in conflict
 			require (d.provider == msg.sender);
 		}
