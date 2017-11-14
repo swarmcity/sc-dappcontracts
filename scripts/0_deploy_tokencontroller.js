@@ -51,6 +51,7 @@ module.exports = function(callback) {
 		//debugger;
 
 		MiniMeTokenFactory.new({
+			from: "0x5263261bAD400DEf63AF145270B2bD144ec64E14",
 				gas: estimate,
 				gasPrice: gasPrice
 			}).then(function(_miniMeToken) {
