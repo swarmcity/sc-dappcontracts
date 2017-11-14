@@ -175,7 +175,7 @@ contract HashtagSimpleDeal is Ownable {
 		// if it's funded - fill in the details
 		deals[sha3(msg.sender,_dealhash)] = dealStruct(DealStatuses.Open,commission,_offerValue,0);
 
-		NewDealForTwo(msg.sender,_dealhash,_metadata);
+		NewDealForTwo(msg.sender,_dealhash,_ipfsMetadata);
 
 	}
 
@@ -194,7 +194,7 @@ contract HashtagSimpleDeal is Ownable {
 
 			deals[sha3(msg.sender,_dealhash)].status = DealStatuses.Cancelled;
 
-			DealStatusChange(msg.sender,_dealhash,DealStatuses.Cancelled,_metadata);
+			DealStatusChange(msg.sender,_dealhash,DealStatuses.Cancelled,_ipfsMetadata);
 		}
 	}
 
@@ -215,7 +215,7 @@ contract HashtagSimpleDeal is Ownable {
 		}
 		/// @dev mark the deal as Disputed
 		deals[sha3(_dealowner,_dealhash)].status = DealStatuses.Disputed;
-		DealStatusChange(_dealowner,_dealhash,DealStatuses.Disputed,_metadata);
+		DealStatusChange(_dealowner,_dealhash,DealStatuses.Disputed,_ipfsMetadata);
 	}
 
 	/// @notice conflict resolver can resolve a disputed deal
@@ -240,7 +240,7 @@ contract HashtagSimpleDeal is Ownable {
 		require (token.transfer(d.provider,d.dealValue * 2 - _seekerFraction));
 
 		deals[sha3(_dealowner,_dealhash)].status = DealStatuses.Resolved;
-		DealStatusChange(_dealowner,_dealhash,DealStatuses.Resolved,_metadata);
+		DealStatusChange(_dealowner,_dealhash,DealStatuses.Resolved,_ipfsMetadata);
 
 	}
 
@@ -264,7 +264,7 @@ contract HashtagSimpleDeal is Ownable {
 		/// @dev fill in the address of the provider ( to payout the deal later on )
 		deals[key].provider = msg.sender;
 
-		FundDeal(msg.sender,_dealowner,sha3(_dealid),_metadata);
+		FundDeal(msg.sender,_dealowner,sha3(_dealid),_ipfsMetadata);
 	}
 
 	/// @notice The payout function can only be called by the deal owner.
@@ -293,7 +293,7 @@ contract HashtagSimpleDeal is Ownable {
 
 		/// @dev mark the deal as done
 		deals[key].status = DealStatuses.Done;
-		DealStatusChange(msg.sender,_dealhash,DealStatuses.Done,_metadata);
+		DealStatusChange(msg.sender,_dealhash,DealStatuses.Done,_ipfsMetadata);
 
 	}
 
