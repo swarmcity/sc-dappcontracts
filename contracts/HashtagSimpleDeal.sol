@@ -107,22 +107,7 @@ contract HashtagSimpleDeal is Ownable {
 			_extraData
 	);*/
 	function receiveApproval(address _msgsender, uint _amount, address _fromcontract, bytes _extraData)  {
-		// uint command = _extraData[0].// do this do another format
-		// string _dealHash = _extraData
-		// uint _offerValue = _extraData
-		// string _metaData = _extraData
-
-		/// @notice If the command is makeDealForTwo
-		// if(command==0) {
-		// 	this.makeDealForTwo(_dealHash, _offerValue, _metaData)
-		// }
-
-		/// @notice If the command is FundDeal
-		/// @notice If the command is cancelDeal
-		/// @notice If the command is resolve
-		/// @notice If the command is Payout
-		/// @notice If the command is nothing
-
+		this.call(_extraData);
 	}
 
 	/// @notice The Hashtag owner can always update the payout address.

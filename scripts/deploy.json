@@ -2,6 +2,6 @@
   "swttokenaddress": "0xb9e7f8568e08d5659f5d29c4997173d84cdf2607",
   "metadata": "QmYuJ6dst3QoumMaA2kKrWuuogFDMsModsKd449DJdT8Jh",
   "minimifactoryaddress" : "0x1eD1Fbe0333a9e81746dFF37Df107C9CeFE8D787",
-  "providerrepaddress" : "0x659f8b32a40a6a980ba6b5ab8a5e42112d14f39f",
-  "supplierrepaddress" : "0x00e9b06ed110f0a59ebb9024065160b3a6eb1b1a"
+  "providerrepaddress" : "",
+  "supplierrepaddress" : ""
 }
