@@ -64,16 +64,16 @@ contract HashtagSimpleDeal is Ownable {
 	event SeekerRepAdded(address to, uint amount);
 
 	/// @dev Event NewDealForTwo - This event is fired when a new deal for two is created.
-	event NewDealForTwo(address owner,bytes32 dealhash, string metadata);
+	event NewDealForTwo(address owner,bytes32 dealhash, string ipfsMetadata);
 
 	/// @dev Event FundDeal - This event is fired when a deal is been funded by a party.
-	event FundDeal(address provider,address owner, bytes32 dealhash,string metadata);
+	event FundDeal(address provider,address owner, bytes32 dealhash,string ipfsMetadata);
 
 	/// @dev DealStatusChange - This event is fired when a deal status is updated.
-	event DealStatusChange(address owner,bytes32 dealhash,DealStatuses newstatus,string metadata);
+	event DealStatusChange(address owner,bytes32 dealhash,DealStatuses newstatus,string ipfsMetadata);
 
 	/// @notice The function that creates the hashtag
-	function HashtagSimpleDeal(address _token, string _name, uint _commission, string _metadataHash,
+	function HashtagSimpleDeal(address _token, string _name, uint _commission, string _ipfsMetadataHash,
 			address _ProviderRep, address _SeekerRep){
 
 		/// @notice The name of the hashtag is set
@@ -89,7 +89,7 @@ contract HashtagSimpleDeal is Ownable {
 		token = IMiniMeToken(_token);
 
 		/// Metadata added
-		metadataHash = _metadataHash;
+		metadataHash = _ipfsMetadataHash;
 
 		/// Commission is set to ...
 		commission = _commission;
@@ -116,8 +116,8 @@ contract HashtagSimpleDeal is Ownable {
 	}
 
 	/// @notice The Hashtag owner can always update the metadata for the hashtag.
-	function setMetadataHash(string _metadataHash) onlyOwner {
-		metadataHash = _metadataHash;
+	function setMetadataHash(string _ipfsMetadataHash) onlyOwner {
+		metadataHash = _ipfsMetadataHash;
 	}
 
 	/// @notice The Hashtag owner can always change the commission amount
@@ -159,7 +159,7 @@ contract HashtagSimpleDeal is Ownable {
 	/// @notice The Deal making stuff
 
 	/// @notice The create Deal function
-	function makeDealForTwo(bytes32 _dealhash, uint _offerValue, string _metadata){
+	function makeDealForTwo(bytes32 _dealhash, uint _offerValue, string _ipfsMetadata){
 
 		// make sure there is enough to pay the commission later on
 		require (commission / 2 <= _offerValue);
@@ -181,7 +181,7 @@ contract HashtagSimpleDeal is Ownable {
 
 	/// @notice The Cancel deal function
 	/// @notice Half of the hashtagfee is sent to payoutaddress
-	function cancelDeal(bytes32 _dealhash,string _metadata){
+	function cancelDeal(bytes32 _dealhash,string _ipfsMetadata){
 		dealStruct storage d = deals[sha3(msg.sender,_dealhash)];
 		if (d.dealValue > 0 && d.provider == 0x0 && d.status == DealStatuses.Open)
 		{
@@ -199,7 +199,7 @@ contract HashtagSimpleDeal is Ownable {
 	}
 
 	/// @notice seeker or provider can choose to dispute an ongoing deal
-	function dispute(bytes32 _dealhash, address _dealowner,string _metadata){
+	function dispute(bytes32 _dealhash, address _dealowner,string _ipfsMetadata){
 		dealStruct storage d = deals[sha3(_dealowner,_dealhash)];
 		require (d.status == DealStatuses.Open);
 
@@ -219,7 +219,7 @@ contract HashtagSimpleDeal is Ownable {
 	}
 
 	/// @notice conflict resolver can resolve a disputed deal
-	function resolve(bytes32 _dealhash, address _dealowner, uint _seekerFraction, string _metadata){
+	function resolve(bytes32 _dealhash, address _dealowner, uint _seekerFraction, string _ipfsMetadata){
 		dealStruct storage d = deals[sha3(_dealowner,_dealhash)];
 
 		/// @dev this function can only be called by the current conflict resolver of the hastag
@@ -245,7 +245,7 @@ contract HashtagSimpleDeal is Ownable {
 	}
 
 	/// @notice Provider has to fund the deal
-	function fundDeal(string _dealid, address _dealowner,string _metadata){
+	function fundDeal(string _dealid, address _dealowner,string _ipfsMetadata){
 
 		bytes32 key = sha3(_dealowner,sha3(_dealid));
 
@@ -268,7 +268,7 @@ contract HashtagSimpleDeal is Ownable {
 	}
 
 	/// @notice The payout function can only be called by the deal owner.
-	function payout(bytes23 _dealhash,string _metadata){
+	function payout(bytes23 _dealhash,string _ipfsMetadata){
 
 		bytes32 key = sha3(msg.sender,_dealhash);
 
