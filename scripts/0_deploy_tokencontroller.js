@@ -14,12 +14,7 @@ if (fs.existsSync(deployFile)) {
 	status = require(deployFile);
 }
 
-if (status.providerrepaddress){
-  console.log('This step has already been done');
-  process.exit();
-}
-
-const tokenFile = '../build/contracts/MiniMeToken.json';
+const tokenFile = '../build/contracts/MiniMeTokenFactory.json';
 
 if (fs.existsSync(tokenFile)) {
 	token = require(tokenFile);
@@ -44,7 +39,7 @@ module.exports = function(callback) {
 
 		//console.log('gasPrice safeLow =', gasPrice);
 
-		console.log('Deploying REP tokens for ', metaData.title);
+		console.log('Deploying Tokencontroller ');
 
 		var estimate = self.web3.eth.estimateGas({data: token.unlinked_binary})
 
@@ -55,20 +50,12 @@ module.exports = function(callback) {
 
 		//debugger;
 
-		MiniMeToken.new(
-			deployFile.minimifactoryaddress,
-			0,
-			0,
-			metaData.title + " Provider Rep",
-			0,
-			"SWR",
-			false, {
-				gas: estimate+100000,
+		MiniMeTokenFactory.new({
+				gas: estimate,
 				gasPrice: gasPrice
 			}).then(function(_miniMeToken) {
-			var providerrep = _miniMeToken;
-			console.log('Provider Rep created at address', _miniMeToken.address);
-
+			//var providerrep = _miniMeToken;
+			console.log('Tokencontroller created at address', _miniMeToken.address);
 		});
 	});
 
