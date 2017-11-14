@@ -19,6 +19,13 @@ if (status.providerrepaddress){
   process.exit();
 }
 
+const tokenFile = '../build/contracts/MiniMeToken.json';
+
+if (fs.existsSync(tokenFile)) {
+	token = require(tokenFile);
+}
+
+
 module.exports = function(callback) {
 	var self = this;
 
@@ -31,11 +38,22 @@ module.exports = function(callback) {
 
 		var ethgasstationInfo = JSON.parse(response.body);
 
-		gasPrice = self.web3.toWei(ethgasstationInfo.safeLow, 'gwei');
+		var gasPrice = self.web3.eth.gasPrice;
+		console.log(gasPrice.toString(10)); // "10000000000000"
 
-		console.log('gasPrice safeLow =', gasPrice);
+
+		//console.log('gasPrice safeLow =', gasPrice);
 
 		console.log('Deploying REP tokens for ', metaData.title);
+
+		var estimate = self.web3.eth.estimateGas({data: token.unlinked_binary})
+
+		console.log('gasestimate: ', estimate);
+	//});
+
+
+
+		//debugger;
 
 		MiniMeToken.new(
 			deployFile.minimifactoryaddress,
@@ -45,7 +63,7 @@ module.exports = function(callback) {
 			0,
 			"SWR",
 			false, {
-				gas: 3000000,
+				gas: estimate,
 				gasPrice: gasPrice
 			}).then(function(_miniMeToken) {
 			var providerrep = _miniMeToken;
