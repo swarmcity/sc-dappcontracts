@@ -1,7 +1,7 @@
 {
   "swttokenaddress": "0xb9e7f8568e08d5659f5d29c4997173d84cdf2607",
   "metadata": "QmYuJ6dst3QoumMaA2kKrWuuogFDMsModsKd449DJdT8Jh",
-  "minimifactoryaddress" : "0x1eD1Fbe0333a9e81746dFF37Df107C9CeFE8D787",
-  "providerrepaddress" : "",
-  "supplierrepaddress" : ""
+  "minimifactoryaddress" : "0x4Ceceed38ebe18d54E6e5561232251280D690746",
+  "providerrepaddress" : "0xc7B7A23D8b04Ab333fe74b9e3C533b1749b9267B",
+  "seekerrepaddress" : "0x08beD99b62bc41214468329362eaD63A2E7e039e"
 }

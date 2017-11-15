@@ -1,10 +1,10 @@
 {
-  	"title": "BoardwalkTest",
-  	"description": "This is the first Boardwalk hashtag for testing",
+  	"title": "BoardwalkV2Test",
+  	"description": "This is the Boardwalk v2 testing hashtag",
   	"contact": [
   		{
   			"name": "Bernd Lapp",
   			"link": "https://twitter.com/berndlapp/"
   		}
-	]  	
+	]
   }

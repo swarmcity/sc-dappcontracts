@@ -14,10 +14,12 @@ if (fs.existsSync(deployFile)) {
 	status = require(deployFile);
 }
 
-if (status.supplierrepaddress){
-  console.log('This step has already been done');
-  process.exit();
+const tokenFile = '../build/contracts/MiniMeTokenFactory.json';
+
+if (fs.existsSync(tokenFile)) {
+	token = require(tokenFile);
 }
+
 
 module.exports = function(callback) {
 	var self = this;
@@ -31,26 +33,30 @@ module.exports = function(callback) {
 
 		var ethgasstationInfo = JSON.parse(response.body);
 
-		gasPrice = self.web3.toWei(ethgasstationInfo.safeLow, 'gwei');
+		var gasPrice = self.web3.eth.gasPrice;
+		console.log(gasPrice.toString(10)); // "10000000000000"
 
-		console.log('gasPrice safeLow =', gasPrice);
 
-		console.log('Deploying REP tokens for ', metaData.title);
+		//console.log('gasPrice safeLow =', gasPrice);
 
-		MiniMeToken.new(
-			deployFile.minimifactoryaddress,
-			0,
-			0,
-			metaData.title + " Supplier Rep",
-			0,
-			"SWR",
-			false, {
-				gas: 3000000,
+		console.log('Deploying Tokencontroller ');
+
+		var estimate = self.web3.eth.estimateGas({data: token.unlinked_binary})
+
+		console.log('gasestimate: ', estimate);
+	//});
+
+
+
+		//debugger;
+
+		MiniMeTokenFactory.new({
+			from: "0x5263261bAD400DEf63AF145270B2bD144ec64E14",
+				gas: estimate,
 				gasPrice: gasPrice
 			}).then(function(_miniMeToken) {
-
-			console.log('Supplier Rep created at address', _miniMeTokenFactory.address);
-
+			//var providerrep = _miniMeToken;
+			console.log('Tokencontroller created at address', _miniMeToken.address);
 		});
 	});
 

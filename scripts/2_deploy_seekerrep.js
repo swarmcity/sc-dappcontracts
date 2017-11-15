@@ -14,7 +14,7 @@ if (fs.existsSync(deployFile)) {
 	status = require(deployFile);
 }
 
-if (status.providerrepaddress){
+if (status.seekerrepaddress){
   console.log('This step has already been done');
   process.exit();
 }
@@ -59,7 +59,7 @@ module.exports = function(callback) {
 			deployFile.minimifactoryaddress,
 			0,
 			0,
-			metaData.title + " Provider Rep",
+			metaData.title + " Seeker Rep",
 			0,
 			"SWR",
 			false, {
@@ -68,7 +68,7 @@ module.exports = function(callback) {
 				gasPrice: gasPrice
 			}).then(function(_miniMeToken) {
 			var providerrep = _miniMeToken;
-			console.log('Provider Rep created at address', _miniMeToken.address);
+			console.log('Seeker Rep created at address', _miniMeToken.address);
 
 		});
 	});
