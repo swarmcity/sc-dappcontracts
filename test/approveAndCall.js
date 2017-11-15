@@ -117,7 +117,10 @@ contract('ApproveAndCallTest', function(accounts) {
 				], [256, 256, 4]);
 
 
-			console.log('condensed=', condensed);
+			console.log('condensed 1 =', condensed);
+
+			console.log('consensed 2 =', approveAndCallify(txdata));
+
 
 			swtToken.approveAndCall(approveAndCallTest.address, 10, '0x' + condensed, {
 				from: accounts[1]
@@ -129,3 +132,25 @@ contract('ApproveAndCallTest', function(accounts) {
 	});
 
 });
+
+
+function approveAndCallify(input) {
+
+	if (input.slice(0, 2) == '0x') {
+		input = input.slice(2);
+	}
+
+	function decimalToHex(d, padding) {
+		var hex = Number(d).toString(16);
+		padding = typeof(padding) === "undefined" || padding === null ? padding = 2 : padding;
+
+		while (hex.length < padding) {
+			hex = "0" + hex;
+		}
+
+		return hex;
+	}
+
+	return (decimalToHex(128, 64) + decimalToHex(input.length / 2, 64) + input);
+
+}
