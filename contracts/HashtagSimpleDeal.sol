@@ -287,7 +287,7 @@ contract HashtagSimpleDeal is Ownable {
 		dealStruct storage d = deals[_dealhash];
 
 		/// @dev you can only payout open deals
-		require (d.status == DealStatuses.Open);
+		require (d.status == DealStatuses.Open || d.status == DealStatuses.Disputed);
 
 		/// @dev pay out commission
 		require (token.transfer(payoutaddress,d.commissionValue));
