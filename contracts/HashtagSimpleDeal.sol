@@ -205,11 +205,11 @@ contract HashtagSimpleDeal is Ownable {
 	}
 
 	/// @notice seeker or provider can choose to dispute an ongoing deal
-	function dispute(bytes32 _dealhash, address _dealowner,string _ipfsMetadata){
+	function dispute(bytes32 _dealhash,string _ipfsMetadata){
 		dealStruct storage d = deals[_dealhash];
 		require (d.status == DealStatuses.Open);
 
-		if (msg.sender == _dealowner){
+		if (msg.sender == d.seeker){
 			/// @dev seeker goes in conflict
 
 			/// @dev can only be only when there is a provider
@@ -221,16 +221,16 @@ contract HashtagSimpleDeal is Ownable {
 		}
 		/// @dev mark the deal as Disputed
 		deals[_dealhash].status = DealStatuses.Disputed;
-		DealStatusChange(_dealowner,_dealhash,DealStatuses.Disputed,_ipfsMetadata);
+		DealStatusChange(d.seeker,_dealhash,DealStatuses.Disputed,_ipfsMetadata);
 	}
 
 	/// @notice conflict resolver can resolve a disputed deal
-	function resolve(bytes32 _dealhash, address _dealowner, uint _seekerFraction, string _ipfsMetadata){
+	function resolve(bytes32 _dealhash, uint _seekerFraction, string _ipfsMetadata){
 		dealStruct storage d = deals[_dealhash];
 
-		/// @dev this function can only be called by the current conflict resolver of the hastag
+		/// @dev this function can only be called by the current payoutaddress of the hastag
 		/// @dev Which is owner for now
-		require (msg.sender == owner);
+		require (msg.sender == payoutaddress);
 
 		/// @dev only disputed deals can be resolved
 		require (d.status == DealStatuses.Disputed) ;
@@ -239,14 +239,20 @@ contract HashtagSimpleDeal is Ownable {
 		require (token.transfer(payoutaddress,d.commissionValue));
 
 		/// @dev send the seeker fraction back to the dealowner
-		require (token.transfer(_dealowner,_seekerFraction));
+		require (token.transfer(d.seeker,_seekerFraction));
+		//seekerfraction = 4
+
+		/// @dev what the seeker is asking for cannot be more than what he offered
+		require(_seekerFraction <= d.dealValue - d.commissionValue/2);
+
+		/// @dev check
+		require(d.dealValue * 2 - _seekerFraction <= d.dealValue * 2);
 
 		/// @dev send the remaining deal value back to the provider
-		require(d.dealValue * 2 - _seekerFraction <= d.dealValue * 2);
 		require (token.transfer(d.provider,d.dealValue * 2 - _seekerFraction));
 
 		deals[_dealhash].status = DealStatuses.Resolved;
-		DealStatusChange(_dealowner,_dealhash,DealStatuses.Resolved,_ipfsMetadata);
+		DealStatusChange(d.seeker,_dealhash,DealStatuses.Resolved,_ipfsMetadata);
 
 	}
 

@@ -377,6 +377,31 @@ contract('HashtagSimpleDeal', function(accounts) {
       });
     });
 
+    it("should try execute canceldeal", function(done) {
+
+            var events2 = hashtagContract.DealStatusChange({
+      				fromBlock: "latest"
+      			});
+      			var listener2 = events2.watch(function(error, result) {
+      				console.log('DealStatusChange  received:', result.args);
+      				//done();
+      			});
+
+            var dealhash = web3.sha3(cleardealid);
+
+            hashtagContract.cancelDeal(dealhash, "ipfs", {
+              from: seeker,
+              gas: 4700000
+            }).then(function(res) {
+              //console.log('gas used:', res.receipt.gasUsed);
+              gasStats.push({
+                name: 'cancelDeal',
+                gasUsed: res.receipt.gasUsed
+              });
+              done();
+            });
+    });
+
     it("should see token balance decreased on providers's account", function(done) {
       swtToken.balanceOf(provider).then(function(balance) {
         //console.log('Provider account: ', balance.toNumber());

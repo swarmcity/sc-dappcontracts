@@ -1,6 +1,10 @@
 var MiniMeTokenFactory = artifacts.require("./MiniMeToken.sol");
 var MiniMeToken = artifacts.require("./MiniMeToken.sol");
+var RepTokenFactory = artifacts.require("./SCRepToken.sol");
+var RepToken = artifacts.require("./SCRepToken.sol");
 var Hashtag = artifacts.require("./HashtagSimpleDeal.sol");
+var utility = require('../utility.js')();
+const ethUtil = require('ethereumjs-util');
 
 contract('HashtagSimpleDeal', function(accounts) {
 
@@ -8,11 +12,17 @@ contract('HashtagSimpleDeal', function(accounts) {
   var hashtagProviderRepToken;
   var hashtagSeekerRepToken;
   var miniMeTokenFactory;
+  var repTokenFactory;
   var hashtagContract;
   var dealContract;
-  var hashtagcommission = 2;
+  var hashtagcommission = 600000000000000000;
+  var dealvalue = 1200000000000000000;
   var gasStats = [];
   var payoutaddress = accounts[4];
+  var seeker = accounts[1];
+  var provider = accounts[2];
+
+  var cleardealid = 'abc';
 
   var self = this;
 
@@ -39,32 +49,33 @@ contract('HashtagSimpleDeal', function(accounts) {
       ).then(function(_miniMeToken) {
         assert.ok(_miniMeToken.address);
         swtToken = _miniMeToken;
+        //console.log('SWT Token: ', swtToken.address);
         done();
       });
     });
 
     it("should mint SWT tokens for Seeker", function(done) {
-      swtToken.generateTokens(accounts[1], 100).then(function() {
+      swtToken.generateTokens(seeker, 100e18).then(function() {
         done();
       });
     });
 
     it("should see token balance Seeker account", function(done) {
-      swtToken.balanceOf(accounts[1]).then(function(balance) {
-        assert.equal(balance.toNumber(), 100, "seeker balance not correct after swt minting");
+      swtToken.balanceOf(seeker).then(function(balance) {
+        assert.equal(balance.toNumber(), 100e18, "seeker balance not correct after swt minting");
         done();
       });
     });
 
     it("should mint SWT tokens for Provider", function(done) {
-      swtToken.generateTokens(accounts[2], 100).then(function() {
+      swtToken.generateTokens(provider, 100e18).then(function() {
         done();
       });
     });
 
     it("should see token balance Provider account", function(done) {
-      swtToken.balanceOf(accounts[2]).then(function(balance) {
-        assert.equal(balance.toNumber(), 100, "provider balance not correct after swt minting");
+      swtToken.balanceOf(provider).then(function(balance) {
+        assert.equal(balance.toNumber(), 100e18, "provider balance not correct after swt minting");
         done();
       });
     });
@@ -72,47 +83,62 @@ contract('HashtagSimpleDeal', function(accounts) {
 
   describe('Hashtag Simple Deal creation flow', function() {
 
+    it("should deploy RepTokenFactory contract", function(done) {
+      RepTokenFactory.new().then(function(_repTokenFactory) {
+        assert.ok(_repTokenFactory.address);
+        repTokenFactory = _repTokenFactory;
+        done();
+      });
+    });
+
     it("should deploy a ProviderRep minime contract", function(done) {
-      MiniMeToken.new(
-        miniMeTokenFactory.address,
+      RepToken.new(
+        repTokenFactory.address,
         0,
         0,
         "Swarm City Provider Rep",
         0,
         "SWR",
         false
-      ).then(function(_miniMeToken) {
-        assert.ok(_miniMeToken.address);
-        hashtagProviderRepToken = _miniMeToken; //.address;
+      ).then(function(_repToken) {
+        assert.ok(_repToken.address);
+        hashtagProviderRepToken = _repToken; //.address;
         done();
       });
     });
 
     it("should deploy a SeekerRep minime contract", function(done) {
-      MiniMeToken.new(
-        miniMeTokenFactory.address,
+      RepToken.new(
+        repTokenFactory.address,
         0,
         0,
         "Swarm City Seeker Rep",
         0,
         "SWR",
         false
-      ).then(function(_miniMeToken) {
-        assert.ok(_miniMeToken.address);
-        hashtagSeekerRepToken = _miniMeToken; //.adddress;
+      ).then(function(_repToken) {
+        assert.ok(_repToken.address);
+        hashtagSeekerRepToken = _repToken; //.address;
         done();
       });
     });
 
 
-    it("should deploy 'PioneerTest' Hashtag", function(done) {
-
+    it("should deploy 'BoardWalkV2Test' Hashtag", function(done) {
       // commission for this hastag is hashtagcommission SWT
-      Hashtag.new(swtToken.address, "PioneerTest", hashtagcommission, "QmNogIets", hashtagProviderRepToken.address, hashtagSeekerRepToken.address).then(function(instance) {
+      //console.log('SWT Token: ', swtToken.address);
+      //console.log('hashtagProviderRepToken Token: ', hashtagProviderRepToken.address);
+      //console.log('hashtagSeekerRepToken Token: ', hashtagSeekerRepToken.address);
+      //console.log('Seeker: ', seeker);
+      //console.log('Provider: ', provider);
+
+      Hashtag.new(swtToken.address, "BoardWalkV2Test", hashtagcommission, "QmNogIets", hashtagProviderRepToken.address, hashtagSeekerRepToken.address).then(function(instance) {
         //console.log(instance);
         hashtagContract = instance;
+        //console.log('hashtagContract Token: ', hashtagContract.address);
+
         assert.isNotNull(hashtagContract);
-        //console.log(hashtagContract);
+        // console.log(hashtagContract);
         // hashtagContract.getProviderRepTokenAddress.call().then(function(tokenaddress) {
         //   hashtagProviderRepToken = MiniMeToken.at(tokenaddress);
         //   hashtagContract.getSeekerRepTokenAddress.call().then(function(tokenaddress) {
@@ -124,7 +150,7 @@ contract('HashtagSimpleDeal', function(accounts) {
       });
     });
 
-    it("should change controller of ProviderRepToken to 'PioneerTest' Hashtag", function(done) {
+    it("should change controller of ProviderRepToken to 'BoardWalkV2Test' Hashtag", function(done) {
 
       hashtagProviderRepToken.changeController(hashtagContract.address).then(function() {
         hashtagProviderRepToken.controller.call().then(function(controller){
@@ -134,7 +160,7 @@ contract('HashtagSimpleDeal', function(accounts) {
       });
     });
 
-    it("should change controller of ProviderRepToken to 'PioneerTest' Hashtag", function(done) {
+    it("should change controller of SeekerRepToken to 'BoardWalkV2Test' Hashtag", function(done) {
       hashtagSeekerRepToken.changeController(hashtagContract.address).then(function() {
         hashtagSeekerRepToken.controller.call().then(function(controller){
           assert.equal(controller,hashtagContract.address, "controller should be PioneerTest");
@@ -156,14 +182,14 @@ contract('HashtagSimpleDeal', function(accounts) {
       });
     });
 
-    it("should verify the payout address of the  'pioneer' Hashtag", function(done) {
+    it("should verify the payout address of the  'BoardWalkV2Test' Hashtag", function(done) {
       hashtagContract.payoutaddress.call().then(function(result) {
         assert.equal(result, payoutaddress, "payout not set...");
         done();
       });
     });
 
-    it("should verify the commission of the  'pioneer' Hashtag", function(done) {
+    it("should verify the commission of the  'BoardWalkV2Test' Hashtag", function(done) {
       hashtagContract.commission.call().then(function(result) {
         assert.equal(result.toNumber(), hashtagcommission, "commission not set...");
         done();
@@ -171,222 +197,318 @@ contract('HashtagSimpleDeal', function(accounts) {
     });
 
     it("should see no REP on Seeker", function(done) {
-      hashtagProviderRepToken.balanceOf(accounts[1]).then(function(balance) {
-        assert.equal(balance, 0, "accounts[1] provider REP balance not correct");
+      hashtagProviderRepToken.balanceOf(seeker).then(function(balance) {
+        assert.equal(balance, 0, "seeker provider REP balance not correct");
         done();
       });
     });
 
     it("should see no REP on Provider", function(done) {
-      hashtagSeekerRepToken.balanceOf(accounts[2]).then(function(balance) {
-        assert.equal(balance, 0, "accounts[1] seeker REP balance not correct");
+      hashtagSeekerRepToken.balanceOf(provider).then(function(balance) {
+        assert.equal(balance, 0, "seeker seeker REP balance not correct");
         done();
       });
     });
 
-    // it("should add the dealForTwoFactory to the whitelisted factories for this hashtag", function(done) {
-    //   hashtagContract.addFactory(dealForTwoFactory.address, {
-    //     gas: 4700000,
-    //     from: accounts[3]
-    //   }).then(function(instance) {
-    //     done();
-    //   });
-    // });
 
-    // it("should see that our dealForTwoFactory is whitelisted for this hashtag", function(done) {
-    //   hashtagContract.validFactories.call(dealForTwoFactory.address).then(function(result) {
-    //     console.log(result);
-    //     assert.equal(result, true, "dealForTwoFactory not whitelisted...");
-    //     done();
-    //   });
-    // });
-
-
-  });
-
-  describe('SimpleDeal conflict flow', function() {
-
-    it("should give Seeker allowance to HashtagSimpleDeal", function(done) {
-      swtToken.approve(hashtagContract.address, 11, {
-        from: accounts[1]
-      }).then(function(res) {
-        //console.log('gas used:', res.receipt.gasUsed);
-        gasStats.push({
-          name: 'approve (seeker)',
-          gasUsed: res.receipt.gasUsed
-        });
-        done();
-      });
-    });
 
     it("should create a new deal", function(done) {
-      hashtagContract.makeDealForTwo("TheConflictDeal", 10, "", {
-        from: accounts[1],
+
+      var events = hashtagContract.ReceivedApproval({
+				fromBlock: "latest"
+			});
+			var listener = events.watch(function(error, result) {
+				console.log('/////// EVENT ApproveCall received:', result.args);
+				//listener.stopWatching();
+				//done();
+			});
+
+      var events2 = hashtagContract.NewDealForTwo({
+				fromBlock: "latest"
+			});
+			var listener2 = events2.watch(function(error, result) {
+				console.log('/////// EVENT NewDealForTwo received:', result.args);
+				//listener2.stopWatching();
+				//done();
+			});
+
+      var events4 = swtToken.Transfer({
+        fromBlock: "latest"
+      });
+      var listener4 = events4.watch(function(error, result) {
+        console.log('/////// EVENT Transfer received:', result.args);
+        //listener4.stopWatching();
+        //done();
+      });
+
+      var events3 = swtToken.Approval({
+				fromBlock: "latest"
+			});
+			var listener3 = events3.watch(function(error, result) {
+				console.log('/////// EVENT SWT Approval received:', result.args);
+				//listener3.stopWatching();
+				//done();
+			});
+
+      var events5 = hashtagContract.DealStatusChange({
+        fromBlock: "latest"
+      });
+      var listener5 = events5.watch(function(error, result) {
+        console.log('/////// EVENT DealStatusChange  received:', result.args);
+        //done();
+      });
+
+      //Approval(msg.sender, _spender, _amount);
+      // Create the dealhash
+      var dealhash = web3.sha3(cleardealid);
+      //console.log('dealhash sha3: ', dealhash);
+      var privkey1 = "b6f33660ea3ce39ffc2817c271d4e02562173f5406a5afb4aa0d0ab2ac91a4ce";
+      var sig = ethUtil.ecsign(new Buffer(dealhash.slice(2),'hex'), new Buffer(privkey1, 'hex'));
+      //console.log(sig);
+      const v = sig.v;
+      const r = `0x${sig.r.toString('hex')}`;
+      const s = `0x${sig.s.toString('hex')}`;
+
+      var c = web3.eth.contract(hashtagContract.abi);
+			var hashtagContractInstance = c.at(hashtagContract.address);
+
+      // prepare the extraData
+      var requestValue = hashtagcommission / 2 + dealvalue;
+      var txdata = hashtagContractInstance.makeDealForTwo.getData(dealhash, dealvalue, "ipfs", v, r, s, {
+				from: seeker
+			});
+
+
+      let extraData = txdata; //"0x55667788";
+
+      const condensed = utility.pack(
+        [
+          128,
+          (extraData.length - 2) / 2,
+          extraData,
+        ], [256, 256, 4]);
+
+
+      var jordiproofData = condensed;
+
+      swtToken.approveAndCall(hashtagContract.address, requestValue, '0x'+jordiproofData, {
+        from: seeker,
         gas: 4700000
       }).then(function(res) {
         //console.log('gas used:', res.receipt.gasUsed);
         gasStats.push({
-          name: 'makeDealForTwo',
+          name: 'approveAndCall',
           gasUsed: res.receipt.gasUsed
         });
         done();
       });
+
     });
 
-    it("should check if the deal exists", function(done) {
-      hashtagContract.readDeal.call("TheConflictDeal", accounts[1]).then(function(res) {
-        console.log(res[0].toNumber(), res[1].toNumber(), res[2].toNumber(), res[3]);
+    it("should check if the deal exists [Open]", function(done) {
+      var dealhash = web3.sha3(cleardealid);
+
+      hashtagContract.readDeal.call(dealhash).then(function(res) {
+        //console.log(res[0].toNumber(), res[1].toNumber(), res[2].toNumber(), res[3]);
+
+        assert.equal(res[2].toNumber(), dealvalue, "deal balance not correct after funding");
+
         done();
       });
     });
 
     it("should see token balance decreased on seeker's account", function(done) {
-      swtToken.balanceOf(accounts[1]).then(function(balance) {
-        //assert.equal(balance.toNumber(), 89, "deal balance not correct after funding");
-        console.log('Balance of accounts[1] =', balance.toNumber());
+      swtToken.balanceOf(seeker).then(function(balance) {
+        assert.equal(balance.toNumber(), 98500000000000000000, "deal balance not correct after funding");
         done();
       });
     });
 
     it("should see token balance on HashtagSimpleDeal", function(done) {
       swtToken.balanceOf(hashtagContract.address).then(function(balance) {
-        //assert.equal(balance.toNumber(), 11, "deal balance not correct after funding");
-        console.log('Balance of hashtag =', balance.toNumber());
-        done();
-      });
-    });
-
-
-    it("should give provider allowance to HashtagSimpleDeal", function(done) {
-      swtToken.approve(hashtagContract.address, 11, {
-        from: accounts[2]
-      }).then(function(res) {
-        //console.log('gas used:', res.receipt.gasUsed);
-        gasStats.push({
-          name: 'approve (provider)',
-          gasUsed: res.receipt.gasUsed
-        });
+        assert.equal(balance.toNumber(), 1500000000000000000, "deal balance not correct after funding");
         done();
       });
     });
 
     it("should execute fundDeal", function(done) {
-      hashtagContract.fundDeal("TheConflictDeal", accounts[1], "", {
-        from: accounts[2],
+
+            var events2 = hashtagContract.FundDeal({
+      				fromBlock: "latest"
+      			});
+      			var listener2 = events2.watch(function(error, result) {
+      				console.log('Provider FundDeal received:', result.args);
+      				listener2.stopWatching();
+      				//done();
+      			});
+
+            var c2 = web3.eth.contract(hashtagContract.abi);
+        	  var hashtagContractInstance2 = c2.at(hashtagContract.address);
+
+            var requestValue2 = hashtagcommission / 2 + dealvalue;
+            //console.log('requestvalue', requestValue2);
+            var txdata2 = hashtagContractInstance2.fundDeal.getData(cleardealid, seeker, "ipfs", provider, {
+      				from: provider
+      			});
+
+            let extraData2 = txdata2; //"0x55667788";
+
+            const condensed2 = utility.pack(
+              [
+                128,
+                (extraData2.length - 2) / 2,
+                extraData2,
+              ], [256, 256, 4]);
+
+            var jordiproofData2 = condensed2;
+
+            swtToken.approveAndCall(hashtagContract.address, requestValue2, '0x'+jordiproofData2, {
+              from: provider,
+              gas: 4700000
+            }).then(function(res) {
+              //console.log('gas used:', res.receipt.gasUsed);
+              gasStats.push({
+                name: 'approveAndCallFund',
+                gasUsed: res.receipt.gasUsed
+              });
+              done();
+            });
+    });
+
+    it("should check if the deal exists with provider in it [Funded]", function(done) {
+      var dealhash = web3.sha3(cleardealid);
+
+      hashtagContract.readDeal.call(dealhash).then(function(res) {
+        //console.log(res[0].toNumber(), res[1].toNumber(), res[2].toNumber(), res[3]);
+        assert.equal(res[3], provider, "deal provider not correct after funding");
+        done();
+      });
+    });
+
+    it("should see token balance decreased on providers's account", function(done) {
+      swtToken.balanceOf(provider).then(function(balance) {
+        //console.log('Provider account: ', balance.toNumber());
+        assert.equal(balance.toNumber(), 98500000000000000000, "deal balance not correct after funding");
+        //console.log('Balance of seeker =', balance.toNumber());
+        done();
+      });
+    });
+
+    it("should see token balance on HashtagSimpleDeal", function(done) {
+      swtToken.balanceOf(hashtagContract.address).then(function(balance) {
+        assert.equal(balance.toNumber(), 3000000000000000000, "deal balance not correct after funding");
+        //console.log('Hashtag account: ', balance.toNumber());        //console.log('Balance of dealForTwoFactory =', balance.toNumber());
+        done();
+      });
+    });
+  });
+
+  //  And now we can go to payout, cancel, dispute, resolve.
+  describe('Dispute by seeker', function() {
+    it("seeker should dispute the deal", function(done) {
+      var dealhash = web3.sha3(cleardealid);
+
+      hashtagContract.dispute(dealhash, "ipfs", {
+        from: seeker,
         gas: 4700000
       }).then(function(res) {
         //console.log('gas used:', res.receipt.gasUsed);
         gasStats.push({
-          name: 'fundDeal',
+          name: 'Dispute by seeker',
           gasUsed: res.receipt.gasUsed
         });
         done();
       });
+
     });
 
-    it("should check if the deal exists", function(done) {
-      hashtagContract.readDeal.call("TheConflictDeal", accounts[1]).then(function(res) {
+    it("should check if the deal is in status 2 [Conflicted]", function(done) {
+      var dealhash = web3.sha3(cleardealid);
+
+      hashtagContract.readDeal.call(dealhash).then(function(res) {
         console.log(res[0].toNumber(), res[1].toNumber(), res[2].toNumber(), res[3]);
-        done();
-      });
-    });
-    it("should see token balance on HashtagSimpleDeal", function(done) {
-      swtToken.balanceOf(accounts[0]).then(function(balance) {
-        console.log('Balance of HashtagSimpleDeal =', balance.toNumber());
+        assert.equal(res[0].toNumber(), 2, "deal status not correct after dispute");
         done();
       });
     });
 
-    it("should see token balance on Seeker", function(done) {
-      swtToken.balanceOf(accounts[1]).then(function(balance) {
-        console.log('Balance of Seeker =', balance.toNumber());
-        done();
-      });
-    });
+    it("payoutaddress should resolve the deal", function(done) {
+      var dealhash = web3.sha3(cleardealid);
 
-    it("should see token balance on Provider", function(done) {
-      swtToken.balanceOf(accounts[2]).then(function(balance) {
-        console.log('Balance of Provider =', balance.toNumber());
-        done();
-      });
-    });
-
-    it("should see token balance on payoutaddress", function(done) {
-      swtToken.balanceOf(accounts[4]).then(function(balance) {
-        console.log('Balance of Payout =', balance.toNumber());
-        done();
-      });
-    });
-
-    it("should put the deal in conflict", function(done) {
-      hashtagContract.dispute("TheConflictDeal", accounts[1], "", {
-        from: accounts[1],
+      hashtagContract.resolve(dealhash, dealvalue / 3, "ipfs", {
+        from: payoutaddress,
         gas: 4700000
       }).then(function(res) {
-        console.log('gas used:', res.receipt.gasUsed);
+        //console.log('gas used:', res.receipt.gasUsed);
         gasStats.push({
-          name: 'conflict',
+          name: 'Resolve by payoutaddress',
           gasUsed: res.receipt.gasUsed
         });
         done();
       });
-    });
 
-    it("should check if the deal is in conflict", function(done) {
-      hashtagContract.readDeal.call("TheConflictDeal", accounts[1]).then(function(res) {
-        console.log(res[0].toNumber(), res[1].toNumber(), res[2].toNumber(), res[3]);
-        done();
-      });
-    });
+      it("should check if the deal is in status 3 [resolved]", function(done) {
+        var dealhash = web3.sha3(cleardealid);
 
-    it("should resolve the deal", function(done) {
-      hashtagContract.resolve("TheConflictDeal", accounts[1], 5, "", {
-        from: accounts[0],
-        gas: 4700000
-      }).then(function(res) {
-        console.log('gas used:', res.receipt.gasUsed);
-        gasStats.push({
-          name: 'resolve',
-          gasUsed: res.receipt.gasUsed
+        hashtagContract.readDeal.call(dealhash).then(function(res) {
+          //console.log(res[0].toNumber(), res[1].toNumber(), res[2].toNumber(), res[3]);
+          assert.equal(res[0].toNumber(), 3, "deal status not correct after resolve");
+          done();
         });
+      });
+
+    });
+
+    it("should see 0 token balance on HashtagSimpleDeal", function(done) {
+      swtToken.balanceOf(hashtagContract.address).then(function(balance) {
+        assert.equal(balance.toNumber(), 0, "hashtag balance not correct after funding");
+        //console.log('Hashtag account: ', balance.toNumber());        //console.log('Balance of dealForTwoFactory =', balance.toNumber());
         done();
       });
     });
 
-    it("should see token balance on HashtagSimpleDeal", function(done) {
-      swtToken.balanceOf(accounts[0]).then(function(balance) {
-        console.log('Balance of HashtagSimpleDeal =', balance.toNumber());
+    it("should see commission balance increased on Payout address", function(done) {
+      swtToken.balanceOf(payoutaddress).then(function(balance) {
+        assert.equal(balance.toNumber(), 600000000000000000, "payoutaddress balance not correct after funding");
+        //console.log('Payout account: ', balance.toNumber());        //console.log('Balance of dealForTwoFactory =', balance.toNumber());
         done();
       });
     });
 
-    it("should see token balance on Seeker", function(done) {
-      swtToken.balanceOf(accounts[1]).then(function(balance) {
-        console.log('Balance of Seeker =', balance.toNumber());
+    it("should see token balance increased on providers's account", function(done) {
+      swtToken.balanceOf(provider).then(function(balance) {
+        //console.log('Provider account: ', balance.toNumber());
+        assert.equal(balance.toNumber(), 100500000000000000000, "deal balance not correct after funding");
+        //console.log('Balance of provider =', balance.toNumber());
         done();
       });
     });
 
-    it("should see token balance on Provider", function(done) {
-      swtToken.balanceOf(accounts[2]).then(function(balance) {
-        console.log('Balance of Provider =', balance.toNumber());
+    it("should see token balance decreased on seeker's account", function(done) {
+      swtToken.balanceOf(seeker).then(function(balance) {
+        //console.log('Provider account: ', balance.toNumber());
+        assert.equal(balance.toNumber(), 98900000000000000000, "deal balance not correct after funding");
+        //console.log('Balance of seeker =', balance.toNumber());
         done();
       });
     });
 
-    it("should see token balance on payoutaddress", function(done) {
-      swtToken.balanceOf(accounts[4]).then(function(balance) {
-        console.log('Balance of Payout =', balance.toNumber());
+    it("should see 0 reptoken balance on ProviderRepToken", function(done) {
+      hashtagProviderRepToken.balanceOf(provider).then(function(balance) {
+        //console.log('Proverderrep balance: ', balance.toNumber())
+        assert.equal(balance.toNumber(), 0, "deal balance not correct after funding");
         done();
       });
     });
 
-    it("should check if the deal is resolved", function(done) {
-      hashtagContract.readDeal.call("TheDeal", accounts[1]).then(function(res) {
-        console.log(res[0].toNumber(), res[1].toNumber(), res[2].toNumber(), res[3]);
+    it("should see 0 reptoken balance on SeekerRepToken", function(done) {
+      hashtagSeekerRepToken.balanceOf(seeker).then(function(balance) {
+        //console.log('Seekerrep balance: ', balance.toNumber())
+        assert.equal(balance.toNumber(), 0, "deal balance not correct after funding");
         done();
       });
     });
+
   });
 
   describe('Stats', function() {
