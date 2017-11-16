@@ -53,6 +53,7 @@ contract HashtagSimpleDeal is Ownable {
 		uint commissionValue;
 		uint dealValue;
 		address provider;
+		address seeker;
 	}
 
 	mapping(bytes32=>dealStruct) deals;
@@ -64,13 +65,16 @@ contract HashtagSimpleDeal is Ownable {
 	event SeekerRepAdded(address to, uint amount);
 
 	/// @dev Event NewDealForTwo - This event is fired when a new deal for two is created.
-	event NewDealForTwo(address owner,bytes32 dealhash, string ipfsMetadata);
+	event NewDealForTwo(address owner,bytes32 dealhash, string ipfsMetadata, uint offerValue, uint commission, uint totalValue);
 
 	/// @dev Event FundDeal - This event is fired when a deal is been funded by a party.
 	event FundDeal(address provider,address owner, bytes32 dealhash,string ipfsMetadata);
 
 	/// @dev DealStatusChange - This event is fired when a deal status is updated.
 	event DealStatusChange(address owner,bytes32 dealhash,DealStatuses newstatus,string ipfsMetadata);
+
+	/// @dev ReceivedApproval - This event is fired when minime sends approval.
+	event ReceivedApproval(address owner,bytes extraData, uint amount);
 
 	/// @notice The function that creates the hashtag
 	function HashtagSimpleDeal(address _token, string _name, uint _commission, string _ipfsMetadataHash,
@@ -108,6 +112,7 @@ contract HashtagSimpleDeal is Ownable {
 	);*/
 	function receiveApproval(address _msgsender, uint _amount, address _fromcontract, bytes _extraData)  {
 		this.call(_extraData);
+		ReceivedApproval(_msgsender, _extraData, _amount);
 	}
 
 	/// @notice The Hashtag owner can always update the payout address.
@@ -159,40 +164,41 @@ contract HashtagSimpleDeal is Ownable {
 	/// @notice The Deal making stuff
 
 	/// @notice The create Deal function
-	function makeDealForTwo(bytes32 _dealhash, uint _offerValue, string _ipfsMetadata){
-
+	function makeDealForTwo(bytes32 _dealhash, uint _offerValue, string _ipfsMetadata, uint8 _v, bytes32 _r, bytes32 _s) {
+		// make sure the owner of the deal is the one creating the deal
+		//require ();
 		// make sure there is enough to pay the commission later on
 		require (commission / 2 <= _offerValue);
-
+		address dealowner = ecrecover(_dealhash, _v, _r, _s);
 		// fund this deal
+		uint totalValue = _offerValue + commission / 2;
     require ( _offerValue + commission / 2 >= _offerValue); //overflow protection
-		require (token.transferFrom(msg.sender,this, _offerValue + commission / 2));
+		require (token.transferFrom(dealowner,this, _offerValue + commission / 2));
 
 		// if deal already exists don't allow to overwrite it
-		require (deals[sha3(msg.sender,_dealhash)].commissionValue == 0 &&
-			deals[sha3(msg.sender,_dealhash)].dealValue == 0);
+		require (deals[_dealhash].commissionValue == 0 &&
+			deals[_dealhash].dealValue == 0);
 
 		// if it's funded - fill in the details
-		deals[sha3(msg.sender,_dealhash)] = dealStruct(DealStatuses.Open,commission,_offerValue,0);
+		deals[_dealhash] = dealStruct(DealStatuses.Open,commission,_offerValue,0,dealowner);
 
-		NewDealForTwo(msg.sender,_dealhash,_ipfsMetadata);
+		NewDealForTwo(dealowner,_dealhash,_ipfsMetadata, _offerValue, commission, totalValue);
 
 	}
 
 	/// @notice The Cancel deal function
 	/// @notice Half of the hashtagfee is sent to payoutaddress
 	function cancelDeal(bytes32 _dealhash,string _ipfsMetadata){
-		dealStruct storage d = deals[sha3(msg.sender,_dealhash)];
+		dealStruct storage d = deals[_dealhash];
 		if (d.dealValue > 0 && d.provider == 0x0 && d.status == DealStatuses.Open)
 		{
 			// @dev if you cancel the deal you pay the hashtagfee / 2
 			require (token.transfer(payoutaddress,d.commissionValue / 2));
 
 			// @dev cancel this Deal
-			require ( d.dealValue - d.commissionValue / 2 <= d.dealValue);
-			require (token.transfer(msg.sender,d.dealValue - d.commissionValue / 2));
+			require (token.transfer(d.seeker,d.dealValue));
 
-			deals[sha3(msg.sender,_dealhash)].status = DealStatuses.Cancelled;
+			deals[_dealhash].status = DealStatuses.Cancelled;
 
 			DealStatusChange(msg.sender,_dealhash,DealStatuses.Cancelled,_ipfsMetadata);
 		}
@@ -200,7 +206,7 @@ contract HashtagSimpleDeal is Ownable {
 
 	/// @notice seeker or provider can choose to dispute an ongoing deal
 	function dispute(bytes32 _dealhash, address _dealowner,string _ipfsMetadata){
-		dealStruct storage d = deals[sha3(_dealowner,_dealhash)];
+		dealStruct storage d = deals[_dealhash];
 		require (d.status == DealStatuses.Open);
 
 		if (msg.sender == _dealowner){
@@ -214,13 +220,13 @@ contract HashtagSimpleDeal is Ownable {
 			require (d.provider == msg.sender);
 		}
 		/// @dev mark the deal as Disputed
-		deals[sha3(_dealowner,_dealhash)].status = DealStatuses.Disputed;
+		deals[_dealhash].status = DealStatuses.Disputed;
 		DealStatusChange(_dealowner,_dealhash,DealStatuses.Disputed,_ipfsMetadata);
 	}
 
 	/// @notice conflict resolver can resolve a disputed deal
 	function resolve(bytes32 _dealhash, address _dealowner, uint _seekerFraction, string _ipfsMetadata){
-		dealStruct storage d = deals[sha3(_dealowner,_dealhash)];
+		dealStruct storage d = deals[_dealhash];
 
 		/// @dev this function can only be called by the current conflict resolver of the hastag
 		/// @dev Which is owner for now
@@ -239,17 +245,17 @@ contract HashtagSimpleDeal is Ownable {
 		require(d.dealValue * 2 - _seekerFraction <= d.dealValue * 2);
 		require (token.transfer(d.provider,d.dealValue * 2 - _seekerFraction));
 
-		deals[sha3(_dealowner,_dealhash)].status = DealStatuses.Resolved;
+		deals[_dealhash].status = DealStatuses.Resolved;
 		DealStatusChange(_dealowner,_dealhash,DealStatuses.Resolved,_ipfsMetadata);
 
 	}
 
 	/// @notice Provider has to fund the deal
-	function fundDeal(string _dealid, address _dealowner,string _ipfsMetadata){
+	function fundDeal(string _dealid, address _dealowner,string _ipfsMetadata, address _provider){
 
-		bytes32 key = sha3(_dealowner,sha3(_dealid));
+		bytes32 dealhash = sha3(_dealid);
 
-		dealStruct storage d = deals[key];
+		dealStruct storage d = deals[dealhash];
 
 		/// @dev only allow open deals to be funded
 		require (d.status == DealStatuses.Open);
@@ -259,20 +265,20 @@ contract HashtagSimpleDeal is Ownable {
 
 		/// @dev put the tokens from the provider on the deal
 		require (d.dealValue + d.commissionValue / 2 >= d.dealValue);
-		require (token.transferFrom(msg.sender,this,d.dealValue + d.commissionValue / 2));
+		require (token.transferFrom(_provider,this,d.dealValue + d.commissionValue / 2));
 
 		/// @dev fill in the address of the provider ( to payout the deal later on )
-		deals[key].provider = msg.sender;
+		deals[dealhash].provider = _provider;
 
-		FundDeal(msg.sender,_dealowner,sha3(_dealid),_ipfsMetadata);
+		FundDeal(_provider, _dealowner, dealhash, _dealid);
 	}
 
 	/// @notice The payout function can only be called by the deal owner.
-	function payout(bytes23 _dealhash,string _ipfsMetadata){
+	function payout(bytes32 _dealhash, string _ipfsMetadata){
 
-		bytes32 key = sha3(msg.sender,_dealhash);
+		require(deals[_dealhash].seeker == msg.sender);
 
-		dealStruct storage d = deals[key];
+		dealStruct storage d = deals[_dealhash];
 
 		/// @dev you can only payout open deals
 		require (d.status == DealStatuses.Open);
@@ -284,25 +290,24 @@ contract HashtagSimpleDeal is Ownable {
 		require (token.transfer(d.provider,d.dealValue * 2));
 
 		/// @dev mint REP for Provider
-		ProviderRep.generateTokens(d.provider, 5000000000000000000);
-		ProviderRepAdded(d.provider, 5000000000000000000);
+		ProviderRep.generateTokens(d.provider, 5);
+		ProviderRepAdded(d.provider, 5);
 
 		/// @dev mint REP for Seeker
-		SeekerRep.generateTokens(msg.sender, 5);
-		SeekerRepAdded(msg.sender, 5);
+		SeekerRep.generateTokens(d.seeker, 5);
+		SeekerRepAdded(d.seeker, 5);
 
 		/// @dev mark the deal as done
-		deals[key].status = DealStatuses.Done;
-		DealStatusChange(msg.sender,_dealhash,DealStatuses.Done,_ipfsMetadata);
+		deals[_dealhash].status = DealStatuses.Done;
+		DealStatusChange(d.seeker,_dealhash,DealStatuses.Done,_ipfsMetadata);
 
 	}
 
 	/// @notice Read the details of a deal
-	function readDeal(bytes32 _dealhash, address _dealowner)
+	function readDeal(bytes32 _dealhash)
 		constant returns(DealStatuses status, uint commissionValue,
 				uint dealValue, address provider){
-		bytes32 key = sha3(_dealowner,_dealhash);
-		return (deals[key].status,deals[key].commissionValue,deals[key].dealValue,deals[key].provider);
+		return (deals[_dealhash].status,deals[_dealhash].commissionValue,deals[_dealhash].dealValue,deals[_dealhash].provider);
 	}
 
 

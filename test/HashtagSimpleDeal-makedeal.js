@@ -323,45 +323,64 @@ contract('HashtagSimpleDeal', function(accounts) {
       });
     });
 
-    it("should execute canceldeal", function(done) {
+    it("should execute fundDeal", function(done) {
 
-            var events2 = hashtagContract.DealStatusChange({
+            var events2 = hashtagContract.FundDeal({
       				fromBlock: "latest"
       			});
       			var listener2 = events2.watch(function(error, result) {
-      				console.log('DealStatusChange  received:', result.args);
+      				console.log('Provider FundDeal received:', result.args);
+      				listener2.stopWatching();
       				//done();
       			});
 
-            var dealhash = web3.sha3(cleardealid);
+            var c2 = web3.eth.contract(hashtagContract.abi);
+        	  var hashtagContractInstance2 = c2.at(hashtagContract.address);
 
-            hashtagContract.cancelDeal(dealhash, "ipfs", {
-              from: seeker,
+            var requestValue2 = hashtagcommission / 2 + dealvalue;
+            //console.log('requestvalue', requestValue2);
+            var txdata2 = hashtagContractInstance2.fundDeal.getData(cleardealid, seeker, "ipfs", provider, {
+      				from: provider
+      			});
+
+            let extraData2 = txdata2; //"0x55667788";
+
+            const condensed2 = utility.pack(
+              [
+                128,
+                (extraData2.length - 2) / 2,
+                extraData2,
+              ], [256, 256, 4]);
+
+            var jordiproofData2 = condensed2;
+
+            swtToken.approveAndCall(hashtagContract.address, requestValue2, '0x'+jordiproofData2, {
+              from: provider,
               gas: 4700000
             }).then(function(res) {
               //console.log('gas used:', res.receipt.gasUsed);
               gasStats.push({
-                name: 'cancelDeal',
+                name: 'approveAndCallFund',
                 gasUsed: res.receipt.gasUsed
               });
               done();
             });
     });
 
-    it("should check if the deal has been cancelled", function(done) {
+    it("should check if the deal exists with provider in it", function(done) {
       var dealhash = web3.sha3(cleardealid);
 
       hashtagContract.readDeal.call(dealhash).then(function(res) {
         //console.log(res[0].toNumber(), res[1].toNumber(), res[2].toNumber(), res[3]);
-        assert.equal(res[0].toNumber(), 4, "deal provider not correct after funding");
+        assert.equal(res[3], provider, "deal provider not correct after funding");
         done();
       });
     });
 
-    it("should see token balance decreased on seekers's account", function(done) {
-      swtToken.balanceOf(seeker).then(function(balance) {
-        //console.log('Seeker account: ', balance.toNumber());
-        assert.equal(balance.toNumber(), 99700000000000000000, "deal balance not correct after cancel");
+    it("should see token balance decreased on providers's account", function(done) {
+      swtToken.balanceOf(provider).then(function(balance) {
+        //console.log('Provider account: ', balance.toNumber());
+        assert.equal(balance.toNumber(), 98500000000000000000, "deal balance not correct after funding");
         //console.log('Balance of seeker =', balance.toNumber());
         done();
       });
@@ -369,29 +388,62 @@ contract('HashtagSimpleDeal', function(accounts) {
 
     it("should see token balance on HashtagSimpleDeal", function(done) {
       swtToken.balanceOf(hashtagContract.address).then(function(balance) {
-        assert.equal(balance.toNumber(), 0, "deal balance not correct after cancel");
+        assert.equal(balance.toNumber(), 3000000000000000000, "deal balance not correct after funding");
         //console.log('Hashtag account: ', balance.toNumber());        //console.log('Balance of dealForTwoFactory =', balance.toNumber());
-        done();
-      });
-    });
-
-    it("should see token balance on payoutaddress", function(done) {
-      swtToken.balanceOf(payoutaddress).then(function(balance) {
-        assert.equal(balance.toNumber(), 300000000000000000, "deal balance not correct after cancel");
-        //console.log('payout account: ', balance.toNumber());        //console.log('Balance of dealForTwoFactory =', balance.toNumber());
         done();
       });
     });
   });
 
   //  And now we can go to payout, cancel, dispute, resolve.
-  describe('Reputation', function() {
+  describe('Payout', function() {
+    it("should payout the deal", function(done) {
+      var dealhash = web3.sha3(cleardealid);
 
+      hashtagContract.payout(dealhash, "ipfs", {
+        from: seeker,
+        gas: 4700000
+      }).then(function(res) {
+        //console.log('gas used:', res.receipt.gasUsed);
+        gasStats.push({
+          name: 'Payout',
+          gasUsed: res.receipt.gasUsed
+        });
+        done();
+      });
+
+    });
+
+    it("should check if the deal is in status 1", function(done) {
+      var dealhash = web3.sha3(cleardealid);
+
+      hashtagContract.readDeal.call(dealhash).then(function(res) {
+        //console.log(res[0].toNumber(), res[1].toNumber(), res[2].toNumber(), res[3]);
+        assert.equal(res[0].toNumber(), 1, "deal status not correct after payout");
+        done();
+      });
+    });
+
+    it("should see 0 token balance on HashtagSimpleDeal", function(done) {
+      swtToken.balanceOf(hashtagContract.address).then(function(balance) {
+        assert.equal(balance.toNumber(), 0, "hashtag balance not correct after funding");
+        //console.log('Hashtag account: ', balance.toNumber());        //console.log('Balance of dealForTwoFactory =', balance.toNumber());
+        done();
+      });
+    });
+
+    it("should see commission balance on Payout address", function(done) {
+      swtToken.balanceOf(payoutaddress).then(function(balance) {
+        assert.equal(balance.toNumber(), 600000000000000000, "payoutaddress balance not correct after funding");
+        //console.log('Payout account: ', balance.toNumber());        //console.log('Balance of dealForTwoFactory =', balance.toNumber());
+        done();
+      });
+    });
 
     it("should see reptoken balance on ProviderRepToken", function(done) {
       hashtagProviderRepToken.balanceOf(provider).then(function(balance) {
         console.log('Proverderrep balance: ', balance.toNumber())
-        assert.equal(balance.toNumber(), 0, "rep token provider not correct");
+        //assert.equal(balance.toNumber(), 1500000000000000000, "deal balance not correct after funding");
         done();
       });
     });
@@ -399,7 +451,7 @@ contract('HashtagSimpleDeal', function(accounts) {
     it("should see reptoken balance on SeekerRepToken", function(done) {
       hashtagSeekerRepToken.balanceOf(seeker).then(function(balance) {
         console.log('Seekerrep balance: ', balance.toNumber())
-        assert.equal(balance.toNumber(), 0, "rep token seeker not correct");
+        //assert.equal(balance.toNumber(), 1500000000000000000, "deal balance not correct after funding");
         done();
       });
     });
