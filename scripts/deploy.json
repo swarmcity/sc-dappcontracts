@@ -1,7 +1,9 @@
 {
   "swttokenaddress": "0xb9e7f8568e08d5659f5d29c4997173d84cdf2607",
-  "metadata": "QmYuJ6dst3QoumMaA2kKrWuuogFDMsModsKd449DJdT8Jh",
-  "minimifactoryaddress" : "0x4Ceceed38ebe18d54E6e5561232251280D690746",
-  "providerrepaddress" : "0xc7B7A23D8b04Ab333fe74b9e3C533b1749b9267B",
-  "seekerrepaddress" : "0x08beD99b62bc41214468329362eaD63A2E7e039e"
+  "payoutaddress": "0x5263261bAD400DEf63AF145270B2bD144ec64E14",
+  "metadata": "QmVFumDg1Ey6B1vaQbrPfh5EW1DbcW8yeFsbuYFiGUU381",
+  "minimifactoryaddress" : "0x638c2e8db975e92c12e64a9416ea5fbb9c251fab",
+  "providerrepaddress" : "0xd661d51c5036cee7248fbbf27f05cc4db9a976c5",
+  "seekerrepaddress" : "0xe79f79c0d4c30db75cfc40a89b8d204e0ed311c4",
+  "hashtagsimpleedealaddress": "0xb7d6eb2c629889cd322f3861a7f34d15b30bd7e2"
 }

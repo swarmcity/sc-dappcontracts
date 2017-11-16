@@ -55,7 +55,6 @@ module.exports = function(callback) {
 			status.metadata,
 			self.web3.toHex(status.providerrepaddress),
 			self.web3.toHex(status.seekerrepaddress), {
-				from: "0x5263261bAD400DEf63AF145270B2bD144ec64E14",
 				gas: estimate+1000000,
 				gasPrice: gasPrice
 			}
