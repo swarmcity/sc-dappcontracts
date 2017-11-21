@@ -253,7 +253,7 @@ contract('HashtagSimpleDeal', function(accounts) {
       //Approval(msg.sender, _spender, _amount);
       // Create the dealhash
       var dealhash = web3.sha3(cleardealid);
-      //console.log('dealhash sha3: ', dealhash);
+      console.log('dealhash sha3: ', dealhash);
       var privkey1 = "b6f33660ea3ce39ffc2817c271d4e02562173f5406a5afb4aa0d0ab2ac91a4ce";
       var sig = ethUtil.ecsign(new Buffer(dealhash.slice(2),'hex'), new Buffer(privkey1, 'hex'));
       //console.log(sig);
