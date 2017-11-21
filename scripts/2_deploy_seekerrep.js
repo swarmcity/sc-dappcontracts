@@ -1,6 +1,6 @@
 const HashtagSimpleDeal = artifacts.require("./HashtagSimpleDeal.sol");
-const MiniMeTokenFactory = artifacts.require("./MiniMeToken.sol");
-const MiniMeToken = artifacts.require("./MiniMeToken.sol");
+const MiniMeTokenFactory = artifacts.require("./SCRepToken.sol");
+const MiniMeToken = artifacts.require("./SCRepToken.sol");
 
 const fs = require('fs');
 const request = require('request');
@@ -63,7 +63,6 @@ module.exports = function(callback) {
 			0,
 			"SWR",
 			false, {
-				from: "0x5263261bAD400DEf63AF145270B2bD144ec64E14",
 				gas: estimate+100000,
 				gasPrice: gasPrice
 			}).then(function(_miniMeToken) {

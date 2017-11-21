@@ -1,0 +1,10 @@
+{
+      name: 'BoardWalkV2Test',
+      id: '7c9v87bc98v7b',
+      commission: 600000000000000000,
+      maintainer: '0x5263261bAD400DEf63AF145270B2bD144ec64E14',
+      contact: [
+          {name: 'bernd@swarm.city', link: 'mailto:bernd@swarm.city'},
+          {name: '@BerndLapp (Twitter)', link: 'http://twitter.com/@BerndLapp'}
+      ],
+  }
